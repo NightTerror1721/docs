@@ -77,6 +77,17 @@ A `FlybyEvent` represents one step in a flyby sequence. You never construct even
 | `event.type` | `integer` | Numeric type identifier of the event. |
 | `event.isFinished` | `boolean` | `true` once this event has played through. |
 
+### Instance Methods
+
+#### `FlybyEvent:toFlybyEvent`
+
+Converts this object to a `FlybyEvent`. Useful when you hold a subclass reference and need to pass a base `FlybyEvent` to an API that requires it.
+
+```lua
+--- @return FlybyEvent
+function FlybyEvent:toFlybyEvent()
+```
+
 ### Factory Methods
 
 #### `FlybyEvent.rawMoveTo`

@@ -1,5 +1,5 @@
 ---
-title: "Ball — Controllable Ball Entity API Reference"
+title: "Ball Class — Controllable Ball Entity API Reference"
 description: "API reference for the Ball class in RollingQuest Lua scripting. Read position, rotation, jump mode, shield, and burning state; manage linked balls."
 sidebarTitle: "Ball"
 ---
@@ -233,6 +233,21 @@ function Ball:asEnemy()      -- returns Enemy
 function Ball:asBall()       -- returns Ball
 function Ball:asDecoration() -- returns Decoration
 ```
+
+## BallData
+
+`BallData` is the raw, mutable representation of a ball used when building or modifying level data (e.g. in `OnLevelLoad`). It holds the initial spawn position, scripting fields, and design-time properties.
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `initialPosition` | `BlockLocation` | ✅ | The block location where the ball spawns at level start. |
+| `template` | `string` | ❌ | Template identifier that determines the ball's appearance and base behaviour. |
+| `scriptRef` | `string` | ❌ | Script file reference attached to this ball. |
+| `scriptTag` | `string` | ❌ | Tag forwarded to the ball's script. |
+| `scriptVars` | `ScriptVariables` | ✅ | Variable table passed into the ball's script. |
+| `properties` | `ElementPropertiesData` | ✅ | Design-time property data for the ball. |
+
+Call `clear()` to reset a `BallData` instance to empty defaults.
 
 ## Usage Example
 

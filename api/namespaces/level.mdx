@@ -473,6 +473,35 @@ function Level.getAvailableProjectileSkins()
 
 ---
 
+## Cast Functions
+
+These functions attempt to cast the current `Level` entity to a specific element type. They throw an error if the cast is invalid — use them only when you are certain of the entity's type.
+
+```lua
+--- @return Level
+function Level.asLevel()
+
+--- @return Block
+function Level.asBlock()
+
+--- @return Side
+function Level.asSide()
+
+--- @return Item
+function Level.asItem()
+
+--- @return Enemy
+function Level.asEnemy()
+
+--- @return Ball
+function Level.asBall()
+
+--- @return Decoration
+function Level.asDecoration()
+```
+
+---
+
 ## Usage Example
 
 ```lua

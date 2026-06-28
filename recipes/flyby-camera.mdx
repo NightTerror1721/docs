@@ -1,5 +1,5 @@
 ---
-title: "How to Trigger Cinematic Flyby Camera Sequences"
+title: "Triggering Cinematic Flyby Camera Sequences in RollingQuest"
 description: "Use the Flyby namespace to zoom the camera to any block in the level, build multi-step cinematic sequences, and guide players to key locations."
 sidebarTitle: "Flyby Camera"
 ---
@@ -118,7 +118,7 @@ Each factory returns a `FlybyEvent` you insert into the events array passed to `
 ### `FlybyEvent` Properties
 
 ```lua
-FlybyEvent.type       -- integer: internal event type ID (read-only)
+FlybyEvent.type       -- integer: the type identifier of the event (read-only)
 FlybyEvent.isFinished -- boolean: true once this event has completed (read-only)
 ```
 

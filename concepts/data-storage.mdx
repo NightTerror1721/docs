@@ -1,5 +1,5 @@
 ---
-title: "Storing and Sharing Data Between Scripts"
+title: "Persisting and Sharing Data Across RollingQuest Scripts"
 description: "Learn how to persist values within a level session and share state across levels using LocalData, RawLocalData, LocalArray, and LocalObject."
 sidebarTitle: "Data Storage"
 ---
@@ -23,7 +23,7 @@ Both are accessed from any script in the level without importing anything.
 
 Use `Level.localData` to share state between multiple scripts within one level — for example, a counter that several block scripts all read and write.
 
-### Reading and Writing with `LocalData`
+### Reading and Writing with `RawLocalData`
 
 `RawLocalData` provides strongly-typed getter and setter methods. Each method accepts a `key` string and works with a specific Lua type.
 
@@ -87,7 +87,7 @@ Level.localData:delete("gate_open")
 
 `Level.campaignGlobalData` is a `LocalData` instance that persists for the lifetime of the entire campaign. Any value you write here in level 1 is still readable in level 5. Use it to track campaign-wide progress, unlock states, or accumulated scores.
 
-`LocalData` exposes the same typed API as `RawLocalData` (`setBool`, `getInteger`, `setString`, etc.).
+`LocalData` exposes the same typed API as `RawLocalData` — the same `setBool`, `getInteger`, `setString`, and related methods — so everything you learned above applies here too.
 
 ```lua
 -- In a level-completion hook: record that this level was cleared

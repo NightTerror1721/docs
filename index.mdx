@@ -1,5 +1,5 @@
 ---
-title: "RollingQuest Lua Scripting Documentation"
+title: "RollingQuest Lua Scripting: The Level Creators Guide"
 sidebarTitle: "Home"
 description: "Learn how to write Lua scripts in RollingQuest's built-in editor to add custom logic, hooks, signals, and gameplay events to your levels."
 ---
@@ -39,8 +39,8 @@ Follow these three steps to write and run your first RollingQuest script.
     Add an `OnStart` hook to run code the moment your level begins. For example, use it to display a welcome message, set the initial score, or trigger an opening camera sequence.
 
     ```lua
-    function OnStart()
-        Level.ShowDialog("Welcome to my level!")
+    function OnStart(self)
+        Dialog.createTemporary("Welcome to my level!", 3)
     end
     ```
   </Step>
