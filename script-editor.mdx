@@ -35,7 +35,7 @@ Each entity's script is a separate file identified by name. Attaching the same s
     Launch RollingQuest and open the level you want to work on in the level editor.
   </Step>
   <Step title="Open the script editor">
-    Find the **Script Editor** panel in the level editor interface. You can open it from the editor toolbar or the entity properties panel — the exact location depends on your editor layout, but it is typically accessible by selecting an entity and looking for the script section in its properties.
+    Open the Script Editor by pressing the C key or from within the "Script" panel of any entity. Pressing the C key automatically opens the Script Editor with all the scripts contained in the level. If you open it from the "Script" section of any entity, you can also select which script you want to link to that entity.
   </Step>
   <Step title="Create a new script">
     In the script editor, create a new script file and give it a descriptive name such as `level_intro` or `moving_block`. The name identifies this script so you can attach it to entities and reference it with `import`, `include`, or `require`.
@@ -100,6 +100,7 @@ print(constants.MAX_LIVES)  -- 5
 ```
 
 <CodeGroup>
+
 ```lua include — merge into current script
 include("shared_helpers")
 
@@ -118,6 +119,7 @@ local M = require("my_module")
 
 M.doSomething()
 ```
+
 </CodeGroup>
 
 ---
@@ -128,12 +130,12 @@ The `Logger` namespace lets you print messages to the in-game logs console while
 
 ### The four log levels
 
-| Function            | When to use                                         | Console style         |
-|---------------------|-----------------------------------------------------|-----------------------|
-| `Logger.log(msg)`   | General output; no special styling                  | Default               |
-| `Logger.info(msg)`  | Informational messages about normal program flow    | Styled as information |
-| `Logger.warning(msg)` | Something unexpected happened but execution continues | Yellow background  |
-| `Logger.error(msg)` | A serious problem that needs your attention         | Red background        |
+| Function | When to use | Console style |
+| --- | --- | --- |
+| `Logger.log(msg)` | General output; no special styling | Default |
+| `Logger.info(msg)` | Informational messages about normal program flow | Styled as information |
+| `Logger.warning(msg)` | Something unexpected happened but execution continues | Yellow background |
+| `Logger.error(msg)` | A serious problem that needs your attention | Red background |
 
 ### Examples
 
