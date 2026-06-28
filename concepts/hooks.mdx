@@ -25,13 +25,13 @@ The function name `OnStart` is the hook name. The game recognises it and calls i
 Every hook receives `self` as its first argument. The value of `self` depends on which entity type the script is attached to:
 
 | Script attached to | `self` type |
-|--------------------|-------------|
-| Level              | `Level`     |
-| Ball               | `Ball`      |
-| Block              | `Block`     |
-| Side               | `Side`      |
-| Item               | `Item`      |
-| Enemy              | `Enemy`     |
+| --- | --- |
+| Level | `Level` |
+| Ball | `Ball` |
+| Block | `Block` |
+| Side | `Side` |
+| Item | `Item` |
+| Enemy | `Enemy` |
 
 Use `self` to read properties of the entity and call methods on it from within the hook.
 
@@ -44,7 +44,7 @@ Use `self` to read properties of the entity and call methods on it from within t
 Hooks available in a script attached to the level itself.
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `OnStart` | `function OnStart(self)` | Called once when the level begins. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame; `deltaTime` is the elapsed time in seconds since the last frame. |
 | `OnWon` | `function OnWon(self)` | Called when the player successfully completes the level. |
@@ -66,7 +66,7 @@ end
 Hooks available in a script attached to a ball entity.
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `OnSpawn` | `function OnSpawn(self)` | Called when the ball first spawns into the level. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the ball is alive. |
 | `OnBallRoll` | `function OnBallRoll(self, rollIn, side)` | Called when the ball rolls onto or off of a side; `rollIn` is `true` when rolling on, `false` when rolling off. |
@@ -83,7 +83,7 @@ Hooks available in a script attached to a ball entity.
 Hooks available in a script attached to a block entity.
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `SpawnCondition` | `function SpawnCondition(self) → boolean` | Called before the block spawns; return `false` to prevent it from appearing. |
 | `OnSpawn` | `function OnSpawn(self)` | Called when the block spawns into the level. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame. |
@@ -100,7 +100,7 @@ Hooks available in a script attached to a block entity.
 Hooks available in a script attached to a side (one face of a block).
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `OnSpawn` | `function OnSpawn(self)` | Called when the side spawns. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame. |
 | `OnBallRoll` | `function OnBallRoll(self, rollIn, ball)` | Called when the ball rolls onto or off of this side specifically. |
@@ -116,7 +116,7 @@ Hooks available in a script attached to a side (one face of a block).
 Hooks available in a script attached to an item entity.
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `SpawnCondition` | `function SpawnCondition(self) → boolean` | Return `false` to prevent the item from spawning. |
 | `OnSpawn` | `function OnSpawn(self)` | Called when the item spawns. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the item is active. |
@@ -133,7 +133,7 @@ Hooks available in a script attached to an item entity.
 Hooks available in a script attached to an enemy entity.
 
 | Hook | Signature | Description |
-|------|-----------|-------------|
+| --- | --- | --- |
 | `SpawnCondition` | `function SpawnCondition(self) → boolean` | Return `false` to prevent the enemy from spawning. |
 | `OnSpawn` | `function OnSpawn(self)` | Called when the enemy spawns. |
 | `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the enemy is alive. |
@@ -163,20 +163,117 @@ end
 ```
 
 <Note>
-`SpawnCondition` is called very early in level setup. Avoid referencing other entities that may not exist yet.
+  `SpawnCondition` is called very early in level setup. Avoid referencing other entities that may not exist yet.
 </Note>
 
 ### OnCustomEvent
 
-`OnCustomEvent` is available on **Block**, **Side**, **Item**, and **Enemy** scripts. It fires when the game dispatches a custom event specifically to that entity — useful for integrating with game systems that extend the default event set.
+`OnCustomEvent` is available on **Block**, **Side**, **Item**, and **Enemy** scripts. It fires when a concrete sub-class of the parent entity emits one of its own built-in events — for example, a `SideButton` emits a `pressed` event when the ball rolls over it, and a `BlockBreaking` emits `break` when it shatters.
+
+The event set is **fixed per sub-class**. The base `Block`, `Side`, `Item`, and `Enemy` types themselves emit no custom events; only their typed sub-classes do. Inside the hook, inspect the `CustomEvent` argument to dispatch on event name and read any parameters the sub-class sent with it.
+
+#### CustomEvent shape
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | The event identifier (e.g. `"pressed"`, `"break"`, `"teleport"`). |
+| `parameters` | `table` | Named parameters sent with the event. Keys depend on the sub-class and event. |
+| `params` | `table` | Alias for `parameters`. |
+
+#### Signature
 
 ```lua
----@param self Block
+---@param self Block|Side|Item|Enemy
 ---@param event CustomEvent
 function OnCustomEvent(self, event)
-    print("Received custom event: " .. tostring(event))
+    if event.name == "pressed" then
+        -- self is a SideButton
+        print("Button pressed!")
+    elseif event.name == "ballBreak" then
+        -- self is a BlockBreaking; event.parameters.ball is the ball that broke it
+        local ball = event.parameters.ball
+        print(ball.name .. " broke the block")
+    end
 end
 ```
+
+#### Events emitted by Block sub-classes
+
+| Sub-class | Event | Parameters | Fired when |
+| --- | --- | --- | --- |
+| `BlockToggle` | `activate` | — | The block becomes activated. |
+| `BlockToggle` | `deactivate` | — | The block becomes deactivated. |
+| `BlockBreaking` | `break` | — | The block breaks for any reason. |
+| `BlockBreaking` | `ballBreak` | `ball: Ball` | A ball causes the block to break. |
+| `BlockBreaking` | `enemyBreak` | `enemy: Enemy` | An enemy causes the block to break. |
+| `BlockCounter` | `break` | — | The counter reaches zero and the block breaks. |
+| `BlockCounter` | `ballBreak` | `ball: Ball` | A ball triggers the final break. |
+| `BlockCounter` | `enemyBreak` | `enemy: Enemy` | An enemy triggers the final break. |
+| `BlockCounter` | `timesChange` | `oldTimes: integer`, `newTimes: integer` | The remaining count changes. |
+| `BlockTrigger` | `enter` | `ball: Ball` | A ball enters the trigger volume. |
+| `BlockBlinking` | `appear` | — | The block becomes solid in the blink cycle. |
+| `BlockBlinking` | `disappear` | — | The block becomes intangible in the blink cycle. |
+
+#### Events emitted by Side sub-classes
+
+| Sub-class | Event | Parameters | Fired when |
+| --- | --- | --- | --- |
+| `SideButton` | `pressed` | — | The button is pressed. |
+| `SideSwitch` | `pressed` | — | The switch is pressed. |
+| `SideSwitch` | `released` | — | The switch is released. |
+| `SideSwitch` | `stateSwitch` | — | The switch toggles its on/off state. |
+| `SidePressurePlate` | `pressed` | — | The plate is depressed by weight. |
+| `SidePressurePlate` | `released` | — | The plate is released. |
+| `SidePressurePlate` | `stateSwitch` | — | The plate toggles its state. |
+| `SideCheckpoint` | `activated` | `firstTime: boolean` | The checkpoint is activated. `firstTime` is `true` on first contact. |
+| `SideCheckpoint` | `deactivated` | — | The checkpoint is deactivated. |
+| `SideExit` | `open` | — | The exit opens. |
+| `SideExit` | `close` | — | The exit closes. |
+| `SideTeleport` | `activate` | — | The teleporter activates. |
+| `SideTeleport` | `deactivate` | — | The teleporter deactivates. |
+| `SideTeleport` | `teleportBall` | `ball: Ball` | A ball is teleported. |
+| `SideTeleport` | `teleportEnemy` | `enemy: Enemy` | An enemy is teleported. |
+| `SideLaser` | `activate` | — | The laser turns on. |
+| `SideLaser` | `deactivate` | — | The laser turns off. |
+| `SideLaser` | `electrocuteEnemy` | `enemy: Enemy` | An enemy is killed by the laser beam. |
+| `SideTeslaCoil` | `activate` | — | The coil powers up. |
+| `SideTeslaCoil` | `deactivate` | — | The coil powers down. |
+| `SideTeslaCoil` | `electrocuteEnemy` | `enemy: Enemy` | An enemy is electrocuted. |
+| `SideSensorSpikes` | `activate` | — | Spikes extend. |
+| `SideSensorSpikes` | `deactivate` | — | Spikes retract. |
+| `SideSensorSpikes` | `catchBall` | `ball: Ball` | The spikes catch a ball. |
+| `SideSensorSpikes` | `catchEnemy` | `enemy: Enemy` | The spikes catch an enemy. |
+| `SideStaticSpikes` | `catchBall` | `ball: Ball` | The spikes catch a ball. |
+| `SideStaticSpikes` | `catchEnemy` | `enemy: Enemy` | The spikes catch an enemy. |
+| `SideRetractableSpike` | `in` | — | The spikes retract. |
+| `SideRetractableSpike` | `out` | — | The spikes extend. |
+| `SideRetractableSpike` | `spikeEnemy` | `enemy: Enemy` | An enemy is impaled. |
+| `SidePatternSpike` | `in` | — | Spikes retract for this pattern step. |
+| `SidePatternSpike` | `out` | — | Spikes extend for this pattern step. |
+| `SidePatternSpike` | `spikeEnemy` | `enemy: Enemy` | An enemy is impaled. |
+| `SideSawblades` | `activate` | — | The blades start spinning. |
+| `SideSawblades` | `deactivate` | — | The blades stop. |
+| `SideSawblades` | `catchBall` | `ball: Ball` | The blades catch a ball. |
+| `SideSawblades` | `catchEnemy` | `enemy: Enemy` | The blades catch an enemy. |
+| `SideRotator` | `rotateBall` | `ball: Ball` | A ball is rotated. |
+| `SideRotator` | `rotateEnemy` | `enemy: Enemy` | An enemy is rotated. |
+| `SideMagnet` | `stateChanged` | `state: integer` | The magnet changes mode. |
+| `SideMagnet` | `catchBall` | `ball: Ball` | The magnet catches a ball. |
+| `SideMagnet` | `catchEnemy` | `enemy: Enemy` | The magnet catches an enemy. |
+| `SideJumpPad` | `farJump` | `ball: Ball` | A ball is launched in a long jump. |
+| `SideJumpPad` | `highJump` | `ball: Ball` | A ball is launched in a high jump. |
+| `SideLightSensor` | `ballDetect` | `ball: Ball` | A ball is detected by the sensor. |
+| `SideLightSensor` | `enemyDetect` | `enemy: Enemy` | An enemy is detected by the sensor. |
+
+#### Events emitted by Item sub-classes
+
+| Sub-class | Event | Parameters | Fired when |
+| --- | --- | --- | --- |
+| `ItemPortalEntrance` | `teleport` | `ball: Ball` | A ball enters the portal and is teleported. |
+
+#### Events emitted by Enemy sub-classes
+
+The base `Enemy` hook supports `OnCustomEvent`, but none of the built-in `Enemy` sub-classes currently emit custom events.
 
 ---
 
@@ -226,5 +323,5 @@ end
 ```
 
 <Tip>
-You only need to define the hooks you actually use. The game silently ignores any hook that isn't present in your script.
+  You only need to define the hooks you actually use. The game silently ignores any hook that isn't present in your script.
 </Tip>

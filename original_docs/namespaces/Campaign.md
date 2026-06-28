@@ -1,4 +1,4 @@
-﻿# Namespace `Campaign`
+# Namespace `Campaign`
 
 ## Variables
 
@@ -11,10 +11,10 @@ Campaign.isArcadeMode
 ```
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `isExplorationMode`
 
@@ -25,10 +25,10 @@ Campaign.isExplorationMode
 ```
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `name`
 
@@ -39,10 +39,10 @@ Campaign.name
 ```
 
 - **Type:** `string`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `requiredFruitsToBonus`
 
@@ -53,10 +53,10 @@ Campaign.requiredFruitsToBonus
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `levelsUntilSaveGame`
 
@@ -67,10 +67,10 @@ Campaign.levelsUntilSaveGame
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `normalLevelsCount`
 
@@ -81,10 +81,10 @@ Campaign.normalLevelsCount
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `firstNormalLevel`
 
@@ -95,10 +95,10 @@ Campaign.firstNormalLevel
 ```
 
 - **Type:** `CampaignLevel`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `episodeCount`
 
@@ -109,10 +109,10 @@ Campaign.episodeCount
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `episodes`
 
@@ -123,10 +123,10 @@ Campaign.episodes
 ```
 
 - **Type:** `CampaignEpisode[]`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `randomBonusMusicCount`
 
@@ -137,10 +137,10 @@ Campaign.randomBonusMusicCount
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `randomBonusMusic`
 
@@ -151,10 +151,10 @@ Campaign.randomBonusMusic
 ```
 
 - **Type:** `string[]`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `randomBonusBallsCount`
 
@@ -165,10 +165,10 @@ Campaign.randomBonusBallsCount
 ```
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `globalData`
 
@@ -179,10 +179,10 @@ Campaign.globalData
 ```
 
 - **Type:** `LocalData`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `isNormalSaveGameEnabled`
 
@@ -193,10 +193,10 @@ Campaign.isNormalSaveGameEnabled
 ```
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `isLoopModeEnabled`
 
@@ -207,10 +207,10 @@ Campaign.isLoopModeEnabled
 ```
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
-___
+---
 
 ### `completionState`
 
@@ -221,7 +221,7 @@ Campaign.completionState
 ```
 
 - **Type:** `CampaignCompletionState`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** Yes
 
 ## Functions
@@ -235,11 +235,9 @@ function Campaign.getNormalLevelByNumber(number)
 ```
 
 - **Static:** No
-- #### Parameters:
-  - **number:** `integer`
 - **Returns:** `CampaignLevel`
 
-___
+---
 
 ### `getEpisode`
 
@@ -250,11 +248,10 @@ function Campaign.getEpisode(index)
 ```
 
 - **Static:** No
-- #### Parameters:
-  - **index:** `integer`
 - **Returns:** `CampaignEpisode`
 
-___
+---
+
 ```lua
 --- @param name string
 --- @return CampaignEpisode
@@ -262,11 +259,9 @@ function Campaign.getEpisode(name)
 ```
 
 - **Static:** No
-- #### Parameters:
-  - **name:** `string`
 - **Returns:** `CampaignEpisode`
 
-___
+---
 
 ### `hasEpisode`
 
@@ -277,6 +272,4 @@ function Campaign.hasEpisode(name)
 ```
 
 - **Static:** No
-- #### Parameters:
-  - **name:** `string`
 - **Returns:** `boolean`

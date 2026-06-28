@@ -11,7 +11,7 @@ The `Item` class represents any collectible object placed on a side in a Rolling
 ### Identity
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `type` | `EntityType` | ✅ | Always `EntityType.Item` (`3`). |
 | `name` | `string` | ✅ | Name derived from the item's template. |
 | `tag` | `string` | ✅ | Tag used for categorisation and scripted lookup. |
@@ -19,7 +19,7 @@ The `Item` class represents any collectible object placed on a side in a Rolling
 ### Transform
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `position` | `Vector3` | ✅ | World-space position of the item. |
 | `rotation` | `Quaternion` | ✅ | World-space rotation of the item. |
 | `basis` | `Basis` | ✅ | Local coordinate-system basis of the item. |
@@ -29,7 +29,7 @@ The `Item` class represents any collectible object placed on a side in a Rolling
 ### State
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `isEnabled` | `boolean` | ✅ | `true` while the item is visible and collectible. |
 | `isTreasure` | `boolean` | ✅ | `true` when the item counts as a treasure collectible. |
 | `isKey` | `boolean` | ✅ | `true` when the item is a key type. |
@@ -82,7 +82,7 @@ function Item:asDecoration() -- returns Decoration
 All of the following sub-classes inherit every property and method from `Item`. You receive the most specific type automatically when accessing items at runtime.
 
 | Sub-class | Description |
-|---|---|
+| --- | --- |
 | `ItemKey` | A key used to unlock exits or doors within the level. |
 | `ItemCoin` | A basic coin collectible that awards score. |
 | `ItemDiamond` | A premium collectible worth more score than a coin. |
@@ -108,6 +108,25 @@ All of the following sub-classes inherit every property and method from `Item`. 
 | `ItemFarJumpModifier` | Increases the ball's horizontal jump distance. |
 | `ItemMessage` | Displays a custom message when collected. |
 | `ItemPortalEntrance` | Activates a portal that teleports the ball on contact. |
+
+## Custom Events
+
+Most `Item` sub-classes don't emit custom events. The exception is `ItemPortalEntrance`, which fires when the portal teleports a ball. Listen for it with the [`OnCustomEvent`](/concepts/hooks#oncustomevent) hook.
+
+| Sub-class | Event | Parameters |
+| --- | --- | --- |
+| `ItemPortalEntrance` | `teleport` | `ball: Ball` |
+
+```lua
+-- Script attached to an ItemPortalEntrance
+---@param self Item
+---@param event CustomEvent
+function OnCustomEvent(self, event)
+    if event.name == "teleport" then
+        Log.info(event.parameters.ball.name .. " went through the portal")
+    end
+end
+```
 
 ## Usage Example
 

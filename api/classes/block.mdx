@@ -11,7 +11,7 @@ The `Block` class represents a single block in the RollingQuest game world — t
 ## Identity
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `type` | `EntityType` | ✅ | Always `EntityType.Block` (`1`). |
 | `id` | `integer` | ✅ | Unique numeric identifier of the block. |
 | `name` | `string` | ✅ | Name of the block (set in the editor). |
@@ -20,7 +20,7 @@ The `Block` class represents a single block in the RollingQuest game world — t
 ## Transform
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `position` | `Vector3` | ✅ | World-space position of the block's centre. |
 | `rotation` | `Quaternion` | ✅ | World-space rotation of the block. |
 | `slot` | `BlockSlot` | ✅ | Grid position (`x`, `y`, `z`) of the block within its section. |
@@ -30,7 +30,7 @@ The `Block` class represents a single block in the RollingQuest game world — t
 Each face of the block is exposed as a direct property and also via `getSide`.
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `upSide` | `Side` | ✅ | The upward-facing side. |
 | `downSide` | `Side` | ✅ | The downward-facing side. |
 | `leftSide` | `Side` | ✅ | The left-facing side. |
@@ -42,7 +42,7 @@ Each face of the block is exposed as a direct property and also via `getSide`.
 ## Neighbors
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `neighbors` | `Block[]` | ✅ | All touching blocks (sharing a full face). |
 | `adjacent` | `Block[]` | ✅ | All adjacent blocks (including diagonal adjacency). |
 | `upNeighbor` | `Block` | ✅ | Block directly above. |
@@ -55,7 +55,7 @@ Each face of the block is exposed as a direct property and also via `getSide`.
 ## State
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `section` | `string` | ✅ | ID of the level section that contains this block. |
 | `isVisited` | `boolean` | ✅ | `true` once the ball has rolled onto this block. |
 | `isMoving` | `boolean` | ✅ | `true` while the block is in motion (e.g. elevator). |
@@ -114,6 +114,7 @@ function Block:asDecoration() -- returns Decoration
 `BlockData` is the raw, mutable representation of a block used when building or modifying level data (e.g. in `OnLevelLoad`). It holds the grid coordinates `x`, `y`, `z`, a `SideData` for each of the six faces (`up`, `down`, `left`, `right`, `front`, `back`), and the scripting fields `template`, `scriptRef`, `scriptTag`, `scriptVars`, and `properties`.
 
 Key `BlockData` methods:
+
 - `getSides()` — returns a table of all six `SideData` values in order: Up, Down, Left, Right, Front, Back.
 - `getSidesIterator()` — returns an iterator-compatible version of the same sequence.
 - `clear()` — resets the block data to empty defaults.
@@ -121,6 +122,34 @@ Key `BlockData` methods:
 ## BlockSlot
 
 `BlockSlot` identifies a block's integer grid coordinate (`x`, `y`, `z`) within a section. You can obtain the world-space `Vector3` from `slot.position`. Use `BlockSlot.new(x, y, z)` to construct a slot, and `slot:translate(dx, dy, dz)` or `slot:translateFromBasis(basis, dx, dy, dz)` to compute offsets.
+
+## Custom Events
+
+Several `Block` sub-classes emit built-in custom events. Listen for them with the [`OnCustomEvent`](/concepts/hooks#oncustomevent) hook and dispatch on `event.name`.
+
+| Sub-class | Event | Parameters |
+| --- | --- | --- |
+| `BlockToggle` | `activate`, `deactivate` | — |
+| `BlockBreaking` | `break` | — |
+| `BlockBreaking` | `ballBreak` | `ball: Ball` |
+| `BlockBreaking` | `enemyBreak` | `enemy: Enemy` |
+| `BlockCounter` | `break` | — |
+| `BlockCounter` | `ballBreak` | `ball: Ball` |
+| `BlockCounter` | `enemyBreak` | `enemy: Enemy` |
+| `BlockCounter` | `timesChange` | `oldTimes: integer`, `newTimes: integer` |
+| `BlockTrigger` | `enter` | `ball: Ball` |
+| `BlockBlinking` | `appear`, `disappear` | — |
+
+```lua
+-- Script attached to a BlockBreaking
+---@param self Block
+---@param event CustomEvent
+function OnCustomEvent(self, event)
+    if event.name == "ballBreak" then
+        Log.info(event.parameters.ball.name .. " broke the block")
+    end
+end
+```
 
 ## Usage Example
 

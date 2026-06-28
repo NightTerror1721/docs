@@ -1,4 +1,4 @@
-﻿# Class `Ball`
+# Class `Ball`
 
 Represents a controllable ball entity in the game. Provides access to ball properties, movement, state, and gameplay interactions for Lua scripting.
 
@@ -12,10 +12,10 @@ Ball.type
 ```
 
 - **Type:** `EntityType`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `name`
 
@@ -27,10 +27,10 @@ Ball.name
 The unique identifier of the ball.
 
 - **Type:** `string`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `tag`
 
@@ -42,10 +42,10 @@ Ball.tag
 The tag associated with the ball.
 
 - **Type:** `string`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `position`
 
@@ -57,10 +57,10 @@ Ball.position
 The current position of the ball in the game world.
 
 - **Type:** `Vector3`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `rotation`
 
@@ -72,10 +72,10 @@ Ball.rotation
 The current rotation of the ball in the game world.
 
 - **Type:** `Quaternion`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `basis`
 
@@ -87,10 +87,10 @@ Ball.basis
 The current basis of the ball.
 
 - **Type:** `Basis`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `blockSlot`
 
@@ -102,10 +102,10 @@ Ball.blockSlot
 The block slot where the ball is currently located.
 
 - **Type:** `BlockSlot`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `section`
 
@@ -117,10 +117,10 @@ Ball.section
 The ID of the section where the ball is located
 
 - **Type:** `string`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `isAlive`
 
@@ -132,10 +132,10 @@ Ball.isAlive
 Indicates whether the ball is currently alive and active in the game.
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `currentMove`
 
@@ -147,10 +147,10 @@ Ball.currentMove
 The current ball movement.
 
 - **Type:** `EntityMoveType`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `currentGroundSide`
 
@@ -162,10 +162,10 @@ Ball.currentGroundSide
 The side the ball is currently on. Returns nil if the ball is in the air.
 
 - **Type:** `Side`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `isOnAir`
 
@@ -177,10 +177,10 @@ Ball.isOnAir
 Indicates whether the ball is currently on the ground.
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `jumpMode`
 
@@ -192,10 +192,10 @@ Ball.jumpMode
 The current jump mode of the ball.
 
 - **Type:** `BallJumpMode`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `slowMode`
 
@@ -207,10 +207,10 @@ Ball.slowMode
 Enable or disable ball slow mode.
 
 - **Type:** `boolean`
-- **Read\-only:** No
+- **Read-only:** No
 - **Static:** No
 
-___
+---
 
 ### `mirrorMode`
 
@@ -222,10 +222,10 @@ Ball.mirrorMode
 Enable or disable ball mirror mode.
 
 - **Type:** `boolean`
-- **Read\-only:** No
+- **Read-only:** No
 - **Static:** No
 
-___
+---
 
 ### `isBurning`
 
@@ -237,10 +237,10 @@ Ball.isBurning
 Indicates whether the ball is burning
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `burningAmount`
 
@@ -252,10 +252,10 @@ Ball.burningAmount
 The current amount of burning affecting the ball.
 
 - **Type:** `number`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `isIcy`
 
@@ -267,10 +267,10 @@ Ball.isIcy
 Indicates whether the ball is icy or not
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `hasShield`
 
@@ -282,10 +282,10 @@ Ball.hasShield
 Indicates whether the ball currently has an active shield.
 
 - **Type:** `boolean`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `skin`
 
@@ -297,10 +297,10 @@ Ball.skin
 The skin ID of the ball.
 
 - **Type:** `integer`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `respawnSide`
 
@@ -310,10 +310,10 @@ Ball.respawnSide
 ```
 
 - **Type:** `Side`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `respawnOrientation`
 
@@ -323,10 +323,10 @@ Ball.respawnOrientation
 ```
 
 - **Type:** `Orientation`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `properties`
 
@@ -338,10 +338,10 @@ Ball.properties
 Gets the properties of the ball.
 
 - **Type:** `ElementPropertyPool`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
-___
+---
 
 ### `localData`
 
@@ -353,7 +353,7 @@ Ball.localData
 The local data associated with this element.
 
 - **Type:** `RawLocalData`
-- **Read\-only:** Yes
+- **Read-only:** Yes
 - **Static:** No
 
 ## Methods
@@ -370,12 +370,10 @@ function Ball:kill(cause, timeToDie)
 Kills the ball after a specified delay with a given cause.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `LostLevelCause`
-  - **timeToDie:** `number`
 - **Returns:** `any`
 
-___
+---
+
 ```lua
 --- @param cause string
 --- @param timeToDie number
@@ -386,12 +384,10 @@ function Ball:kill(cause, timeToDie)
 Kills the ball after a specified delay with a custom cause.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `string`
-  - **timeToDie:** `number`
 - **Returns:** `any`
 
-___
+---
+
 ```lua
 --- @param cause string
 --- @param causeIcon LostLevelCause
@@ -403,13 +399,9 @@ function Ball:kill(cause, causeIcon, timeToDie)
 Kills the ball after a specified delay with a custom cause and icon.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `string`
-  - **causeIcon:** `LostLevelCause`
-  - **timeToDie:** `number`
 - **Returns:** `any`
 
-___
+---
 
 ### `instaKill`
 
@@ -422,11 +414,10 @@ function Ball:instaKill(cause)
 Instantly kills the ball with a given cause.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `LostLevelCause`
 - **Returns:** `any`
 
-___
+---
+
 ```lua
 --- @param cause string
 --- @return any
@@ -436,11 +427,10 @@ function Ball:instaKill(cause)
 Instantly kills the ball with a custom cause.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `string`
 - **Returns:** `any`
 
-___
+---
+
 ```lua
 --- @param cause string
 --- @param causeIcon LostLevelCause
@@ -451,12 +441,9 @@ function Ball:instaKill(cause, causeIcon)
 Instantly kills the ball with a custom cause and icon.
 
 - **Static:** No
-- #### Parameters:
-  - **cause:** `string`
-  - **causeIcon:** `LostLevelCause`
 - **Returns:** `any`
 
-___
+---
 
 ### `teleportToSide`
 
@@ -470,12 +457,9 @@ function Ball:teleportToSide(side, orientation)
 Teleports the ball to a specified side and orientation.
 
 - **Static:** No
-- #### Parameters:
-  - **side:** `Side`
-  - **orientation:** `Orientation`
 - **Returns:** `boolean`
 
-___
+---
 
 ### `increaseJumpMode`
 
@@ -489,7 +473,7 @@ Increases the jump mode of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `decreaseJumpMode`
 
@@ -503,7 +487,7 @@ Decreases the jump mode of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `doMove`
 
@@ -516,11 +500,9 @@ function Ball:doMove(move)
 Performs a move action for the ball.
 
 - **Static:** No
-- #### Parameters:
-  - **move:** `EntityMoveType`
 - **Returns:** `any`
 
-___
+---
 
 ### `linkBall`
 
@@ -533,11 +515,9 @@ function Ball:linkBall(ball)
 Links the ball to another ball.
 
 - **Static:** No
-- #### Parameters:
-  - **ball:** `Ball`
 - **Returns:** `any`
 
-___
+---
 
 ### `unlinkBall`
 
@@ -550,11 +530,9 @@ function Ball:unlinkBall(ball)
 Unlinks the ball from another ball.
 
 - **Static:** No
-- #### Parameters:
-  - **ball:** `Ball`
 - **Returns:** `any`
 
-___
+---
 
 ### `unlinkAllBalls`
 
@@ -568,7 +546,7 @@ Unlinks the ball from all linked balls.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `isBallLinked`
 
@@ -581,11 +559,9 @@ function Ball:isBallLinked(ball)
 Checks if the ball is linked to another ball.
 
 - **Static:** No
-- #### Parameters:
-  - **ball:** `Ball`
 - **Returns:** `boolean`
 
-___
+---
 
 ### `getLinkedBalls`
 
@@ -599,7 +575,7 @@ Gets a list of all balls linked to this ball.
 - **Static:** No
 - **Returns:** `Ball[]`
 
-___
+---
 
 ### `getLinkedBallsIterator`
 
@@ -613,7 +589,7 @@ Gets an iterator for all balls linked to this ball.
 - **Static:** No
 - **Returns:** `Ball[]`
 
-___
+---
 
 ### `addBurningAmount`
 
@@ -626,11 +602,9 @@ function Ball:addBurningAmount(amount)
 Adds a specified amount of burning to the ball.
 
 - **Static:** No
-- #### Parameters:
-  - **amount:** `number`
 - **Returns:** `any`
 
-___
+---
 
 ### `increaseJumpAheadDistance`
 
@@ -644,7 +618,7 @@ Increases the jump ahead distance of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `decreaseJumpAheadDistance`
 
@@ -658,7 +632,7 @@ Decreases the jump ahead distance of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `increaseJumpUpDistance`
 
@@ -672,7 +646,7 @@ Increases the jump up distance of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `decreaseJumpUpDistance`
 
@@ -686,7 +660,7 @@ Decreases the jump up distance of the ball.
 - **Static:** No
 - **Returns:** `any`
 
-___
+---
 
 ### `changeGravity`
 
@@ -699,11 +673,9 @@ function Ball:changeGravity(newFace)
 Changes the gravity of the ball to a specified face.
 
 - **Static:** No
-- #### Parameters:
-  - **newFace:** `Face`
 - **Returns:** `boolean`
 
-___
+---
 
 ### `enableShield`
 
@@ -716,11 +688,9 @@ function Ball:enableShield(seconds)
 Enables a shield for the ball for a specified duration.
 
 - **Static:** No
-- #### Parameters:
-  - **seconds:** `number`
 - **Returns:** `any`
 
-___
+---
 
 ### `increaseShieldTime`
 
@@ -733,11 +703,9 @@ function Ball:increaseShieldTime(seconds)
 Increases the shield time of the ball by a specified duration.
 
 - **Static:** No
-- #### Parameters:
-  - **seconds:** `number`
 - **Returns:** `any`
 
-___
+---
 
 ### `setRespawnLocation`
 
@@ -751,12 +719,10 @@ function Ball:setRespawnLocation(side, orientation)
 Sets the respawn location of the ball to a specified side and orientation.
 
 - **Static:** No
-- #### Parameters:
-  - **side:** `Side`
-  - **orientation:** `Orientation`
 - **Returns:** `any`
 
-___
+---
+
 ```lua
 --- @param slot BlockSlot
 --- @param face Face
@@ -768,13 +734,9 @@ function Ball:setRespawnLocation(slot, face, orientation)
 Sets the respawn location of the ball to a specified block slot, face, and orientation.
 
 - **Static:** No
-- #### Parameters:
-  - **slot:** `BlockSlot`
-  - **face:** `Face`
-  - **orientation:** `Orientation`
 - **Returns:** `any`
 
-___
+---
 
 ### `collectItem`
 
@@ -787,11 +749,9 @@ function Ball:collectItem(item)
 Collects a specified item for the ball.
 
 - **Static:** No
-- #### Parameters:
-  - **item:** `Item`
 - **Returns:** `any`
 
-___
+---
 
 ### `asLevel`
 
@@ -805,7 +765,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Level`
 
-___
+---
 
 ### `asBlock`
 
@@ -819,7 +779,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Block`
 
-___
+---
 
 ### `asSide`
 
@@ -833,7 +793,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Side`
 
-___
+---
 
 ### `asItem`
 
@@ -847,7 +807,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Item`
 
-___
+---
 
 ### `asEnemy`
 
@@ -861,7 +821,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Enemy`
 
-___
+---
 
 ### `asBall`
 
@@ -875,7 +835,7 @@ Casts the current element to a specific type if possible. Throws an error if the
 - **Static:** No
 - **Returns:** `Ball`
 
-___
+---
 
 ### `asDecoration`
 

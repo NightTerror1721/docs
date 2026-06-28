@@ -11,7 +11,7 @@ The `Side` class represents one of the six faces of a [`Block`](/api/classes/blo
 ### Identity
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `type` | `EntityType` | ✅ | Always `EntityType.Side` (`2`). |
 | `id` | `integer` | ✅ | Unique numeric identifier of this side. |
 | `name` | `string` | ✅ | Name of the side, taken from its template. |
@@ -20,7 +20,7 @@ The `Side` class represents one of the six faces of a [`Block`](/api/classes/blo
 ### Transform
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `position` | `Vector3` | ✅ | World-space position of the side's origin corner. |
 | `rotation` | `Quaternion` | ✅ | World-space rotation of the side. |
 | `centerPosition` | `Vector3` | ✅ | World-space position of the side's centre point. |
@@ -31,7 +31,7 @@ The `Side` class represents one of the six faces of a [`Block`](/api/classes/blo
 ### Geometry
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `block` | `Block` | ✅ | The parent block this side belongs to. |
 | `blockSlot` | `BlockSlot` | ✅ | Grid slot of the parent block. |
 | `face` | `Face` | ✅ | Which face of the block this side occupies. |
@@ -41,7 +41,7 @@ The `Side` class represents one of the six faces of a [`Block`](/api/classes/blo
 ### Rules
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `isIntangible` | `boolean` | ✅ | `true` when the side has no physical collision. |
 | `hasJumpBan` | `boolean` | ✅ | `true` when jumping is prohibited while on this side. |
 | `hasMoveBan` | `boolean` | ✅ | `true` when movement is prohibited while on this side. |
@@ -49,7 +49,7 @@ The `Side` class represents one of the six faces of a [`Block`](/api/classes/blo
 ### Attachments
 
 | Property | Type | Read-only | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `item` | `Item` | ✅ | The item placed on this side, or `nil`. |
 | `hasItem` | `boolean` | ✅ | `true` when an item is present on this side. |
 | `decoration` | `Decoration` | ✅ | The decoration placed on this side, or `nil`. |
@@ -115,7 +115,7 @@ Key `SideData` methods: `clearItem()`, `clearDecoration()`, `clear()`.
 The following concrete sub-classes all inherit every property and method from `Side`. You receive the most-specific type automatically when accessing sides at runtime.
 
 | Sub-class | Description |
-|---|---|
+| --- | --- |
 | `SideNormal` | A plain, unremarkable side with no special behaviour. |
 | `SideButton` | A pressable button that triggers signals when the ball rolls over it. |
 | `SideCheckpoint` | Saves the ball's respawn position when touched. |
@@ -146,6 +146,57 @@ The following concrete sub-classes all inherit every property and method from `S
 | `SideSwitch` | Toggles blocks or other level elements. |
 | `SidePressurePlate` | Activates only when the ball is resting on it. |
 | `SideLightSensor` | Detects light conditions to trigger other elements. |
+
+## Custom Events
+
+Many `Side` sub-classes emit built-in custom events. Listen for them with the [`OnCustomEvent`](/concepts/hooks#oncustomevent) hook and dispatch on `event.name`.
+
+| Sub-class | Event | Parameters |
+| --- | --- | --- |
+| `SideButton` | `pressed` | — |
+| `SideSwitch` | `pressed`, `released`, `stateSwitch` | — |
+| `SidePressurePlate` | `pressed`, `released`, `stateSwitch` | — |
+| `SideCheckpoint` | `activated` | `firstTime: boolean` |
+| `SideCheckpoint` | `deactivated` | — |
+| `SideExit` | `open`, `close` | — |
+| `SideTeleport` | `activate`, `deactivate` | — |
+| `SideTeleport` | `teleportBall` | `ball: Ball` |
+| `SideTeleport` | `teleportEnemy` | `enemy: Enemy` |
+| `SideLaser` | `activate`, `deactivate` | — |
+| `SideLaser` | `electrocuteEnemy` | `enemy: Enemy` |
+| `SideTeslaCoil` | `activate`, `deactivate` | — |
+| `SideTeslaCoil` | `electrocuteEnemy` | `enemy: Enemy` |
+| `SideSensorSpikes` | `activate`, `deactivate` | — |
+| `SideSensorSpikes` | `catchBall` | `ball: Ball` |
+| `SideSensorSpikes` | `catchEnemy` | `enemy: Enemy` |
+| `SideStaticSpikes` | `catchBall` | `ball: Ball` |
+| `SideStaticSpikes` | `catchEnemy` | `enemy: Enemy` |
+| `SideRetractableSpike` | `in`, `out` | — |
+| `SideRetractableSpike` | `spikeEnemy` | `enemy: Enemy` |
+| `SidePatternSpike` | `in`, `out` | — |
+| `SidePatternSpike` | `spikeEnemy` | `enemy: Enemy` |
+| `SideSawblades` | `activate`, `deactivate` | — |
+| `SideSawblades` | `catchBall` | `ball: Ball` |
+| `SideSawblades` | `catchEnemy` | `enemy: Enemy` |
+| `SideRotator` | `rotateBall` | `ball: Ball` |
+| `SideRotator` | `rotateEnemy` | `enemy: Enemy` |
+| `SideMagnet` | `stateChanged` | `state: integer` |
+| `SideMagnet` | `catchBall` | `ball: Ball` |
+| `SideMagnet` | `catchEnemy` | `enemy: Enemy` |
+| `SideJumpPad` | `farJump`, `highJump` | `ball: Ball` |
+| `SideLightSensor` | `ballDetect` | `ball: Ball` |
+| `SideLightSensor` | `enemyDetect` | `enemy: Enemy` |
+
+```lua
+-- Script attached to a SideButton
+---@param self Side
+---@param event CustomEvent
+function OnCustomEvent(self, event)
+    if event.name == "pressed" then
+        Log.info("Button on face " .. self.faceName .. " was pressed")
+    end
+end
+```
 
 ## Usage Example
 
