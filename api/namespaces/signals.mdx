@@ -1,0 +1,237 @@
+---
+title: "Signals Namespace — RollingQuest Lua Scripting API"
+description: "Complete reference for the Signals namespace: emit custom signals to all entities, specific targets, tags, types, or filtered subsets in your Lua scripts."
+sidebarTitle: "Signals"
+---
+
+The `Signals` namespace is how you broadcast messages between entities in the level. A signal carries an identifier string and optional data payload; any entity that listens for that identifier will receive the signal and can act on it. You choose the delivery scope — all entities, a single target, a tag group, a type group, or entities that pass a custom filter function.
+
+---
+
+## Functions
+
+### `emit`
+
+Dispatches a pre-built `Signal` object, or constructs one inline from a property table.
+
+```lua
+--- @param signal Signal
+--- @return any
+function Signals.emit(signal)
+```
+
+```lua
+--- @param signalProperties table
+--- @return any
+function Signals.emit(signalProperties)
+```
+
+The table form lets you build and emit in a single expression:
+
+```lua
+Signals.emit{ id = "OnActivate", data = { power = 2 } }
+```
+
+---
+
+### `emitToAll`
+
+Broadcasts a signal to every entity in the level, optionally with a data payload.
+
+```lua
+--- @param signalId string
+--- @return any
+function Signals.emitToAll(signalId)
+
+--- @param signalId string
+--- @param data any
+--- @return any
+function Signals.emitToAll(signalId, data)
+```
+
+---
+
+### `emitTo`
+
+Sends a signal to a single specific entity.
+
+```lua
+--- @param signalId string
+--- @param target Element
+--- @return any
+function Signals.emitTo(signalId, target)
+
+--- @param signalId string
+--- @param target Element
+--- @param data any
+--- @return any
+function Signals.emitTo(signalId, target, data)
+```
+
+---
+
+### `emitToTag`
+
+Sends a signal to every entity that carries the given tag string.
+
+```lua
+--- @param signalId string
+--- @param tag string
+--- @return any
+function Signals.emitToTag(signalId, tag)
+
+--- @param signalId string
+--- @param tag string
+--- @param data any
+--- @return any
+function Signals.emitToTag(signalId, tag, data)
+```
+
+---
+
+### `emitToType`
+
+Sends a signal to every entity of a given `EntityType`.
+
+```lua
+--- @param signalId string
+--- @param type EntityType
+--- @return any
+function Signals.emitToType(signalId, type)
+
+--- @param signalId string
+--- @param type EntityType
+--- @param data any
+--- @return any
+function Signals.emitToType(signalId, type, data)
+```
+
+---
+
+### `emitToTypeAndTag`
+
+Sends a signal to every entity that matches both the given type and tag.
+
+```lua
+--- @param signalId string
+--- @param type EntityType
+--- @param tag string
+--- @return any
+function Signals.emitToTypeAndTag(signalId, type, tag)
+
+--- @param signalId string
+--- @param type EntityType
+--- @param tag string
+--- @param data any
+--- @return any
+function Signals.emitToTypeAndTag(signalId, type, tag, data)
+```
+
+---
+
+### `emitToCustom`
+
+Sends a signal to every entity for which `customFilter(entity, signal)` returns `true`.
+
+```lua
+--- @param signalId string
+--- @param customFilter function
+--- @return any
+function Signals.emitToCustom(signalId, customFilter)
+
+--- @param signalId string
+--- @param customFilter function
+--- @param data any
+--- @return any
+function Signals.emitToCustom(signalId, customFilter, data)
+```
+
+---
+
+## Signal Class
+
+You can construct a `Signal` object manually when you need full control over all delivery options. Pass it to `Signals.emit()`.
+
+### Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `signal.id` | `string` | The signal identifier string (required). |
+| `signal.data` | `any` | Optional payload delivered alongside the signal. |
+| `signal.target` | `Element` | If set, only this entity receives the signal. |
+| `signal.tagFilter` | `string` | If set, only entities with this tag receive the signal. |
+| `signal.typeFilter` | `EntityType` | Only entities of this type receive the signal. Defaults to `EntityType.Any`. |
+| `signal.customFilter` | `function` | If set, called for each candidate entity; return `true` to include it. |
+
+### `Signal.new`
+
+```lua
+--- @param id string
+--- @param data any
+--- @param target Element
+--- @param tagFilter string
+--- @param typeFilter EntityType
+--- @param customFilter function
+--- @return Signal
+function Signal.new(id, data, target, tagFilter, typeFilter, customFilter)
+
+--- @param properties table
+--- @return Signal
+function Signal.new(properties)
+```
+
+The table-constructor form is the most common approach. All fields except `id` are optional:
+
+```lua
+local sig = Signal.new{
+    id         = "OnDoorOpen",
+    tagFilter  = "wooden-door",
+    typeFilter = EntityType.Block,
+    data       = { silent = true },
+}
+Signals.emit(sig)
+```
+
+---
+
+## Usage Examples
+
+### Broadcast to all entities
+
+```lua
+function OnStart()
+    Signals.emitToAll("OnLevelBegin")
+end
+```
+
+### Target a specific entity
+
+```lua
+function OnKeyCollected()
+    local exit = Elements.tagged["exit-block"]
+    Signals.emitTo("OnUnlock", exit, { source = "key" })
+end
+```
+
+### Notify all entities sharing a tag
+
+```lua
+-- Wake up every enemy tagged "sleeping-guard"
+Signals.emitToTag("OnWakeUp", "sleeping-guard")
+```
+
+### Filter by type and tag together
+
+```lua
+-- Tell every Side entity tagged "pressure-plate" that the ball rolled over one
+Signals.emitToTypeAndTag("OnPressed", EntityType.Side, "pressure-plate")
+```
+
+### Custom filter
+
+```lua
+-- Only send the signal to blocks that are in the main section
+Signals.emitToCustom("OnFlash", function(entity, signal)
+    return entity.sectionId == "main"
+end)
+```

@@ -1,0 +1,251 @@
+---
+title: "Storing and Sharing Data Between Scripts"
+description: "Learn how to persist values within a level session and share state across levels using LocalData, RawLocalData, LocalArray, and LocalObject."
+sidebarTitle: "Data Storage"
+---
+
+Scripts often need to remember things — how many enemies the player has defeated, whether a secret door has been opened, or a score multiplier set in an earlier level. RollingQuest gives you two storage layers to cover both use cases: **level-local data** that lives for the duration of the current level session, and **campaign-global data** that persists across all levels in a campaign.
+
+## Storage Layers at a Glance
+
+| Property | Type | Scope |
+|----------|------|-------|
+| `Level.localData` | `RawLocalData` | Current level session only |
+| `Level.campaignGlobalData` | `LocalData` | Entire campaign (survives level transitions) |
+
+Both are accessed from any script in the level without importing anything.
+
+---
+
+## Level-Local Data: `Level.localData`
+
+`Level.localData` is a `RawLocalData` instance scoped to the current level. Values written here are available to every script running in the same level session, but they do not carry over to the next level.
+
+Use `Level.localData` to share state between multiple scripts within one level — for example, a counter that several block scripts all read and write.
+
+### Reading and Writing with `LocalData`
+
+`RawLocalData` provides strongly-typed getter and setter methods. Each method accepts a `key` string and works with a specific Lua type.
+
+<Tabs>
+<Tab title="Writing values">
+
+```lua
+-- Store a boolean flag
+Level.localData:setBool("gate_open", true)
+
+-- Store an integer counter
+Level.localData:setInteger("coins_collected", 0)
+
+-- Store a floating-point number
+Level.localData:setNumber("elapsed_seconds", 0.0)
+
+-- Store a string
+Level.localData:setString("last_checkpoint", "bridge-area")
+
+-- Store an arbitrary table
+Level.localData:setTable("player_state", { lives = 3, score = 100 })
+```
+
+</Tab>
+<Tab title="Reading values">
+
+```lua
+-- The second argument is the default value if the key doesn't exist
+local isOpen  = Level.localData:getBool("gate_open", false)
+local coins   = Level.localData:getInteger("coins_collected", 0)
+local elapsed = Level.localData:getNumber("elapsed_seconds", 0.0)
+local label   = Level.localData:getString("last_checkpoint", "start")
+
+-- getTable with no default returns an empty table when missing
+local state   = Level.localData:getTable("player_state")
+```
+
+</Tab>
+</Tabs>
+
+### Checking and Deleting Keys
+
+```lua
+-- Check if a key was ever set
+if Level.localData:exists("gate_open") then
+    print("Gate flag exists")
+end
+
+-- Check existence AND type (e.g. "boolean", "integer", "number", "string", "table")
+if Level.localData:existsAsType("coins_collected", "integer") then
+    local n = Level.localData:getInteger("coins_collected", 0)
+end
+
+-- Remove a key entirely
+Level.localData:delete("gate_open")
+```
+
+---
+
+## Campaign-Global Data: `Level.campaignGlobalData`
+
+`Level.campaignGlobalData` is a `LocalData` instance that persists for the lifetime of the entire campaign. Any value you write here in level 1 is still readable in level 5. Use it to track campaign-wide progress, unlock states, or accumulated scores.
+
+`LocalData` exposes the same typed API as `RawLocalData` (`setBool`, `getInteger`, `setString`, etc.).
+
+```lua
+-- In a level-completion hook: record that this level was cleared
+---@param self Level
+function OnWon(self)
+    Level.campaignGlobalData:setBool("level_" .. Level.campaignLevelIndex .. "_cleared", true)
+    Level.campaignGlobalData:setInteger(
+        "total_coins",
+        Level.campaignGlobalData:getInteger("total_coins", 0) + Level.collectedKeys
+    )
+end
+```
+
+```lua
+-- In a later level: check earlier progress
+---@param self Level
+function OnStart(self)
+    local clearedFirst = Level.campaignGlobalData:getBool("level_1_cleared", false)
+    if clearedFirst then
+        -- Spawn the secret bonus block
+        Elements.tagged["bonus-block"]:asBlock():enable()
+    end
+end
+```
+
+<Note>
+`Level.campaignGlobalData` is only meaningful when the level is played inside a campaign. If the level runs standalone, the data still works but will not persist between separate play sessions.
+</Note>
+
+---
+
+## Structured Data: `LocalArray` and `LocalObject`
+
+For more complex payloads you can create `LocalArray` and `LocalObject` instances. Both support the same value types: `nil`, `number`, `string`, `boolean`, nested `LocalArray`, and nested `LocalObject`.
+
+### `LocalArray`
+
+A `LocalArray` is an ordered list you can use like a Lua table with integer keys.
+
+```lua
+-- Create an empty array and populate it
+local arr = LocalArray.new()
+arr:add(10)
+arr:add(20)
+arr:add(30)
+print(arr.length)   -- 3
+print(arr[1])       -- 10
+
+-- Create from an existing table
+local scores = LocalArray.newFrom({ 100, 200, 300 })
+
+-- Insert at a position, remove, or clear
+arr:insert(2, 15)   -- insert 15 at index 2
+arr:removeAt(1)     -- remove element at index 1
+arr:clear()         -- remove all elements
+```
+
+Store and retrieve an array in level-local data:
+
+```lua
+local highScores = LocalArray.newFrom({ 500, 400, 300 })
+Level.localData:setTable("high_scores", highScores)
+```
+
+### `LocalObject`
+
+A `LocalObject` is a key-value map with string keys — similar to a Lua table, but designed to work with the data storage system.
+
+```lua
+-- Create a LocalObject and set fields
+local profile = LocalObject.new()
+profile:add("name", "Player1")
+profile:add("level", 3)
+profile:add("hasShield", false)
+
+-- Read back
+print(profile:get("name"))      -- "Player1"
+print(profile:hasKey("score"))  -- false
+
+-- Remove a key
+profile:remove("hasShield")
+
+-- Direct index access (syntactic sugar)
+profile["lives"] = 5
+print(profile["lives"])  -- 5
+```
+
+Store the whole object:
+
+```lua
+Level.campaignGlobalData:setTable("player_profile", profile)
+```
+
+---
+
+## Sharing Data Between Scripts
+
+Because `Level.localData` is global to the entire level, any script can read what another script wrote. This makes it easy to coordinate state across entity scripts without using signals.
+
+<Steps>
+
+<Step title="Script A writes a value">
+
+```lua
+-- Block script: increment a counter when the ball rolls on
+---@param self Block
+---@param rollIn boolean
+---@param side Side
+---@param ball Ball
+function OnBallRoll(self, rollIn, side, ball)
+    if rollIn then
+        local count = Level.localData:getInteger("plates_activated", 0)
+        Level.localData:setInteger("plates_activated", count + 1)
+    end
+end
+```
+
+</Step>
+
+<Step title="Script B reads the value">
+
+```lua
+-- Level script: check if all three plates are active to open the final door
+---@param self Level
+---@param deltaTime number
+function OnUpdate(self, deltaTime)
+    local activated = Level.localData:getInteger("plates_activated", 0)
+    if activated >= 3 then
+        local door = Elements.tagged["final-door"]:asBlock()
+        door:disable()
+    end
+end
+```
+
+</Step>
+
+</Steps>
+
+---
+
+## Quick Reference
+
+| Method | Description |
+|--------|-------------|
+| `data:setBool(key, value)` | Store a boolean. |
+| `data:getBool(key, default)` | Read a boolean; returns `default` if missing. |
+| `data:setInteger(key, value)` | Store an integer. |
+| `data:getInteger(key, default)` | Read an integer; returns `default` if missing. |
+| `data:setNumber(key, value)` | Store a floating-point number. |
+| `data:getNumber(key, default)` | Read a number; returns `default` if missing. |
+| `data:setString(key, value)` | Store a string. |
+| `data:getString(key, default)` | Read a string; returns `default` if missing. |
+| `data:setTable(key, table)` | Store a table (can be a `LocalArray` or `LocalObject`). |
+| `data:getTable(key [, default])` | Read a table; returns `default` or `{}` if missing. |
+| `data:exists(key)` | Returns `true` if the key is present. |
+| `data:existsAsType(key, sType)` | Returns `true` if the key exists and matches the given type string. |
+| `data:delete(key)` | Remove the key from storage. |
+
+<Tip>
+Prefix your keys with a unique identifier (like the entity name or script role) to avoid accidental collisions when multiple scripts use the same storage instance.
+</Tip>

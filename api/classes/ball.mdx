@@ -1,0 +1,257 @@
+---
+title: "Ball — Controllable Ball Entity API Reference"
+description: "API reference for the Ball class in RollingQuest Lua scripting. Read position, rotation, jump mode, shield, and burning state; manage linked balls."
+sidebarTitle: "Ball"
+---
+
+The `Ball` class represents the player-controlled ball entity in a RollingQuest level. You receive a `Ball` instance as the `self` parameter in ball-specific hooks such as `OnUpdate`, `OnLand`, and `OnJump`. Through it you can read the ball's current state, change movement behaviour, manage linked balls, apply status effects, and kill the ball with a custom cause.
+
+## Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Ball` (`5`). |
+| `name` | `string` | ✅ | The unique identifier assigned to this ball. |
+| `tag` | `string` | ✅ | The tag associated with the ball, used for grouping or lookup. |
+| `skin` | `integer` | ✅ | The skin ID currently applied to the ball. |
+
+## Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the ball. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the ball. |
+| `basis` | `Basis` | ✅ | The current orientation basis of the ball. |
+
+## State
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `blockSlot` | `BlockSlot` | ✅ | The grid slot the ball currently occupies. |
+| `section` | `string` | ✅ | ID of the level section the ball is in. |
+| `isAlive` | `boolean` | ✅ | `true` while the ball is alive and active. |
+| `currentMove` | `EntityMoveType` | ✅ | The movement action the ball is currently executing. |
+| `currentGroundSide` | `Side` | ✅ | The side the ball is resting on; `nil` when airborne. |
+| `isOnAir` | `boolean` | ✅ | `true` when the ball is not touching the ground. |
+| `jumpMode` | `BallJumpMode` | ✅ | Current jump capability: `Banned` (0), `Normal` (1), or `Bouncing` (2). |
+| `slowMode` | `boolean` | ❌ | Read or write to enable/disable slow-motion movement. |
+| `mirrorMode` | `boolean` | ❌ | Read or write to enable/disable mirrored controls. |
+| `isBurning` | `boolean` | ✅ | `true` when a burning effect is active. |
+| `burningAmount` | `number` | ✅ | Accumulated burning intensity on the ball. |
+| `isIcy` | `boolean` | ✅ | `true` when the ball has the icy status. |
+| `hasShield` | `boolean` | ✅ | `true` while a shield is protecting the ball. |
+| `respawnSide` | `Side` | ✅ | The side set as the ball's current respawn point. |
+| `respawnOrientation` | `Orientation` | ✅ | The orientation at the current respawn point. |
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the ball. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this ball. |
+
+## Methods
+
+### kill
+
+Kills the ball after a delay. Three overloads are available:
+
+```lua
+--- @param cause LostLevelCause
+--- @param timeToDie number
+function Ball:kill(cause, timeToDie)
+
+--- @param cause string
+--- @param timeToDie number
+function Ball:kill(cause, timeToDie)
+
+--- @param cause string
+--- @param causeIcon LostLevelCause
+--- @param timeToDie number
+function Ball:kill(cause, causeIcon, timeToDie)
+```
+
+### instaKill
+
+Kills the ball immediately without a delay. Three overloads mirror `kill`:
+
+```lua
+--- @param cause LostLevelCause
+function Ball:instaKill(cause)
+
+--- @param cause string
+function Ball:instaKill(cause)
+
+--- @param cause string
+--- @param causeIcon LostLevelCause
+function Ball:instaKill(cause, causeIcon)
+```
+
+### teleportToSide
+
+```lua
+--- @param side Side
+--- @param orientation Orientation
+--- @return boolean
+function Ball:teleportToSide(side, orientation)
+```
+
+Teleports the ball to the given side and facing orientation. Returns `true` on success.
+
+### doMove
+
+```lua
+--- @param move EntityMoveType
+function Ball:doMove(move)
+```
+
+Forces the ball to perform a specific movement action.
+
+### increaseJumpMode / decreaseJumpMode
+
+```lua
+function Ball:increaseJumpMode()
+function Ball:decreaseJumpMode()
+```
+
+Step the ball's `jumpMode` up or down through `Banned → Normal → Bouncing`.
+
+### increaseJumpAheadDistance / decreaseJumpAheadDistance
+
+```lua
+function Ball:increaseJumpAheadDistance()
+function Ball:decreaseJumpAheadDistance()
+```
+
+Adjust how far ahead the ball travels on a jump.
+
+### increaseJumpUpDistance / decreaseJumpUpDistance
+
+```lua
+function Ball:increaseJumpUpDistance()
+function Ball:decreaseJumpUpDistance()
+```
+
+Adjust the vertical height of the ball's jump.
+
+### changeGravity
+
+```lua
+--- @param newFace Face
+--- @return boolean
+function Ball:changeGravity(newFace)
+```
+
+Redirects gravity to the specified face of the current block. Returns `true` when the change succeeds.
+
+### enableShield / increaseShieldTime
+
+```lua
+--- @param seconds number
+function Ball:enableShield(seconds)
+
+--- @param seconds number
+function Ball:increaseShieldTime(seconds)
+```
+
+Grant or extend the ball's protective shield by `seconds`.
+
+### addBurningAmount
+
+```lua
+--- @param amount number
+function Ball:addBurningAmount(amount)
+```
+
+Adds to the ball's current burning accumulator.
+
+### linkBall / unlinkBall / unlinkAllBalls
+
+```lua
+--- @param ball Ball
+function Ball:linkBall(ball)
+
+--- @param ball Ball
+function Ball:unlinkBall(ball)
+
+function Ball:unlinkAllBalls()
+```
+
+Manage cooperative links between balls. Linked balls share certain movement events.
+
+### isBallLinked
+
+```lua
+--- @param ball Ball
+--- @return boolean
+function Ball:isBallLinked(ball)
+```
+
+Returns `true` when this ball is linked to `ball`.
+
+### getLinkedBalls / getLinkedBallsIterator
+
+```lua
+--- @return Ball[]
+function Ball:getLinkedBalls()
+
+--- @return Ball[]
+function Ball:getLinkedBallsIterator()
+```
+
+`getLinkedBalls` returns a table; `getLinkedBallsIterator` returns an iterator-compatible form for use in `for` loops.
+
+### setRespawnLocation
+
+Two overloads let you pin the respawn point to a side or to a specific block slot + face:
+
+```lua
+--- @param side Side
+--- @param orientation Orientation
+function Ball:setRespawnLocation(side, orientation)
+
+--- @param slot BlockSlot
+--- @param face Face
+--- @param orientation Orientation
+function Ball:setRespawnLocation(slot, face, orientation)
+```
+
+### collectItem
+
+```lua
+--- @param item Item
+function Ball:collectItem(item)
+```
+
+Forces the ball to collect the specified item immediately.
+
+### Type-cast helpers
+
+Every entity exposes a set of `as*` methods. Call them when you hold a generic entity reference and need to narrow its type. Each throws an error if the cast is invalid.
+
+```lua
+function Ball:asLevel()      -- returns Level
+function Ball:asBlock()      -- returns Block
+function Ball:asSide()       -- returns Side
+function Ball:asItem()       -- returns Item
+function Ball:asEnemy()      -- returns Enemy
+function Ball:asBall()       -- returns Ball
+function Ball:asDecoration() -- returns Decoration
+```
+
+## Usage Example
+
+The following `OnUpdate` hook reads the ball's position every frame and kills it instantly when it falls below y = –20:
+
+```lua
+function OnUpdate(self, deltaTime)
+    -- self is a Ball
+    local pos = self.position
+
+    if pos.y < -20 then
+        self:instaKill("Fell into the void")
+    end
+
+    -- Slow the ball down when it enters a particular section
+    if self.section == "danger_zone" then
+        self.slowMode = true
+    else
+        self.slowMode = false
+    end
+end
+```

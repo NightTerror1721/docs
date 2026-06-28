@@ -1,0 +1,139 @@
+---
+title: "Item — Collectible Item Entity API Reference"
+description: "API reference for the Item class in RollingQuest Lua scripting. Access item identity, slot, treasure flags, and collect, enable, and disable methods."
+sidebarTitle: "Item"
+---
+
+The `Item` class represents any collectible object placed on a side in a RollingQuest level. Scripts attached to an item receive it as `self` in hooks such as `OnCollect` and `OnRespawn`. You can read the item's state, programmatically collect it for any ball, and toggle its presence in the level. RollingQuest ships with a large library of typed item sub-classes — from simple collectibles like `ItemCoin` to gameplay modifiers like `ItemSlowMotion` — all inheriting the properties and methods described here.
+
+## Properties
+
+### Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Item` (`3`). |
+| `name` | `string` | ✅ | Name derived from the item's template. |
+| `tag` | `string` | ✅ | Tag used for categorisation and scripted lookup. |
+
+### Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the item. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the item. |
+| `basis` | `Basis` | ✅ | Local coordinate-system basis of the item. |
+| `slot` | `BlockSlot` | ✅ | Grid slot of the block the item is placed on. |
+| `section` | `string` | ✅ | ID of the level section containing the item. |
+
+### State
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `isEnabled` | `boolean` | ✅ | `true` while the item is visible and collectible. |
+| `isTreasure` | `boolean` | ✅ | `true` when the item counts as a treasure collectible. |
+| `isKey` | `boolean` | ✅ | `true` when the item is a key type. |
+| `isFruit` | `boolean` | ✅ | `true` when the item is a fruit type. |
+| `treasureScore` | `integer` | ✅ | Point value awarded when collected as a treasure. |
+| `developerModeOnly` | `boolean` | ✅ | `true` when the item only appears in developer mode. |
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the item. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this item. |
+
+## Methods
+
+### collect
+
+```lua
+--- @param collectorBall Ball
+function Item:collect(collectorBall)
+```
+
+Forces the specified ball to collect this item immediately, triggering the normal collection logic.
+
+### enable / disable
+
+```lua
+function Item:enable()
+function Item:disable()
+```
+
+Show or hide the item. A disabled item is invisible and cannot be collected until re-enabled.
+
+### Type-cast helpers
+
+Use these when you hold a generic entity reference and need to narrow its type. Each throws an error if the cast is invalid.
+
+```lua
+function Item:asLevel()      -- returns Level
+function Item:asBlock()      -- returns Block
+function Item:asSide()       -- returns Side
+function Item:asItem()       -- returns Item
+function Item:asEnemy()      -- returns Enemy
+function Item:asBall()       -- returns Ball
+function Item:asDecoration() -- returns Decoration
+```
+
+## ItemData
+
+`ItemData` is the raw, mutable representation used when building level data (e.g. in `OnLevelLoad`). It exposes `template`, `scriptRef`, `scriptTag`, `scriptVars`, and `properties` as writable fields, plus `isRespawnEnabled` and `respawnTime` which control whether the item reappears after being collected. Call `clear()` to reset it to defaults.
+
+## Item Subtypes
+
+All of the following sub-classes inherit every property and method from `Item`. You receive the most specific type automatically when accessing items at runtime.
+
+| Sub-class | Description |
+|---|---|
+| `ItemKey` | A key used to unlock exits or doors within the level. |
+| `ItemCoin` | A basic coin collectible that awards score. |
+| `ItemDiamond` | A premium collectible worth more score than a coin. |
+| `ItemFruit` | A fruit collectible; the level's fruit trophy item. |
+| `ItemGoblet` | A trophy-style collectible. |
+| `ItemLetter` | Collects a letter toward spelling out a bonus word. |
+| `ItemBattery` | Restores a time bonus or recharges a level timer. |
+| `ItemTimePlus` | Adds time to the level countdown timer. |
+| `ItemTimeMinus` | Subtracts time from the level countdown timer. |
+| `ItemLiveUp` | Awards an extra life. |
+| `ItemShield` | Grants the ball a temporary protective shield. |
+| `ItemSlowMotion` | Activates slow-motion movement for the ball. |
+| `ItemBouncingPill` | Switches the ball to bouncing jump mode. |
+| `ItemJumpBanPill` | Bans the ball from jumping for a duration. |
+| `ItemSleepingPill` | Briefly immobilises the ball. |
+| `ItemPoison` | Applies a harmful status effect to the ball. |
+| `ItemMirror` | Activates mirrored controls for the ball. |
+| `ItemGlasses` | Reveals hidden blocks or level elements. |
+| `ItemLightBulb` | Illuminates dark areas or activates light-sensitive elements. |
+| `ItemTorch` | Provides localised light in dark level sections. |
+| `ItemHourglass` | Modifies the timer or freezes it temporarily. |
+| `ItemGravityArrow` | Redirects the ball's gravity to a new face. |
+| `ItemFarJumpModifier` | Increases the ball's horizontal jump distance. |
+| `ItemMessage` | Displays a custom message when collected. |
+| `ItemPortalEntrance` | Activates a portal that teleports the ball on contact. |
+
+## Usage Example
+
+The `OnCollect` hook fires when a ball collects the item. The example below logs the collector's name and disables the item for 5 seconds before re-enabling it:
+
+```lua
+function OnCollect(self, ball)
+    -- self is an Item
+    Log.info(ball.name .. " collected item: " .. self.name)
+
+    -- Disable and schedule re-enable using a timer
+    self:disable()
+
+    Timer.schedule(5.0, function()
+        self:enable()
+    end)
+end
+```
+
+You can also collect an item manually from another script — for example when a ball steps onto a trigger side:
+
+```lua
+function OnBallRoll(self, ball)
+    -- self is a Side
+    if self.hasItem and self.item.tag == "bonus_coin" then
+        self.item:collect(ball)
+    end
+end
+```

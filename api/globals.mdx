@@ -1,0 +1,317 @@
+---
+title: "Globals — Built-in Variables and Functions for All Scripts"
+description: "Reference for all global variables and functions available in every RollingQuest Lua script, including OOP helpers, script loading, standard functions, and math/string/table library highlights."
+sidebarTitle: "Globals"
+---
+
+Every RollingQuest Lua script runs inside a shared environment that pre-populates a set of global variables and functions before your code executes. These globals give you the building blocks for object-oriented programming (defining classes, creating instances), loading other scripts, debugging output, and working with Lua's standard libraries. You do not need to import or require anything to access them — they are simply available.
+
+---
+
+## Global Variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `_G` | `table<string, any>` | The global environment table. All top-level names are entries in `_G`. Read-only reference; modifying its contents changes the global scope. |
+| `_VERSION` | `string` | The version string of the Lua runtime being used. |
+
+```lua
+print(_VERSION)   -- e.g. "Lua 5.2"
+```
+
+---
+
+## OOP Helpers
+
+RollingQuest extends Lua with a lightweight class system. You define classes with `class()`, create instances with `new()`, and introspect the class hierarchy with `classof()` and `instanceof()`.
+
+### `class`
+
+Creates and returns a new table configured to act as a class. You can optionally inherit from an existing class by passing it as the second argument.
+
+```lua
+--- @param className string
+--- @param baseClass table|nil
+--- @return table
+function class(className, baseClass)
+```
+
+### `new`
+
+Creates a new instance of `class`, wires up the prototype chain, and calls the constructor (`__init` by convention) if one is defined, passing `args` through.
+
+```lua
+--- @param class table
+--- @param args any
+--- @return table
+function new(class, args)
+```
+
+### `rawnew`
+
+Like `new` but skips the constructor call. Use this inside a constructor to create the raw instance before initialising fields manually.
+
+```lua
+--- @param class table
+--- @return table
+function rawnew(class)
+```
+
+### `baseclass`
+
+Returns the base class that `class` inherits from, or `nil` if it has none.
+
+```lua
+--- @param class table
+--- @return table|nil
+function baseclass(class)
+```
+
+### `classof`
+
+Returns the class of a value. For class instances it returns the class table; for primitive Lua types it returns a string with the type name (`"number"`, `"string"`, etc.).
+
+```lua
+--- @param value any
+--- @return any
+function classof(value)
+```
+
+### `instanceof`
+
+Returns `true` if `value` is an instance of `type` or any subclass of it. You can also pass a string type name to check primitive types.
+
+```lua
+--- @param value any
+--- @param type any
+--- @return boolean
+function instanceof(value, type)
+```
+
+### Complete class definition example
+
+```lua
+-- Define a base class
+local Entity = class("Entity")
+
+function Entity:__init(name, hp)
+    self.name = name
+    self.hp   = hp
+end
+
+function Entity:takeDamage(amount)
+    self.hp = self.hp - amount
+    if self.hp <= 0 then
+        print(self.name .. " has been defeated!")
+    end
+end
+
+function Entity:describe()
+    print(self.name .. " — HP: " .. tostring(self.hp))
+end
+
+-- Define a subclass that extends Entity
+local Enemy = class("Enemy", Entity)
+
+function Enemy:__init(name, hp, reward)
+    -- Initialise the base class fields
+    local base = baseclass(Enemy)
+    base.__init(self, name, hp)
+    self.reward = reward
+end
+
+function Enemy:defeat()
+    print("You defeated " .. self.name .. " and earned " .. tostring(self.reward) .. " gold!")
+end
+
+-- Create instances
+local goblin = new(Enemy, { "Goblin", 30, 10 })
+goblin:describe()       -- Goblin — HP: 30
+goblin:takeDamage(30)   -- Goblin has been defeated!
+goblin:defeat()         -- You defeated Goblin and earned 10 gold!
+
+-- Introspection
+print(classof(goblin) == Enemy)           -- true
+print(instanceof(goblin, Entity))         -- true (subclass check)
+print(instanceof(goblin, "table"))        -- true (primitive type check)
+```
+
+---
+
+## Script Loading
+
+RollingQuest provides three functions for bringing external scripts into a running script. Each has distinct semantics, so choose the right one for your use case.
+
+### `import`
+
+Loads the script `scriptName`, executes it in its own isolated scope, and returns its globals as a table. Use `import` when you want a clean namespace and to avoid polluting the current scope.
+
+```lua
+--- @param scriptName string
+--- @return table<string, any>
+function import(scriptName)
+```
+
+```lua
+local Utils = import("SharedUtilities")
+Utils.doSomething()
+```
+
+### `include`
+
+Loads the script `scriptName` and merges its globals directly into the current script's scope. Think of it like a textual paste — all the names the loaded script defines become available as if you had written them yourself.
+
+```lua
+--- @param scriptName string
+function include(scriptName)
+```
+
+```lua
+include("SharedConstants")
+print(MAX_ENEMIES)   -- defined in SharedConstants, now in scope
+```
+
+### `require`
+
+Loads the module in `scriptName`. If that script returns a value (a table, class, or anything else), `require` passes that value back to the caller. This mirrors standard Lua module conventions and is the right choice for library-style scripts.
+
+```lua
+--- @param scriptName string
+--- @return any
+function require(scriptName)
+```
+
+```lua
+local json = require("json")
+local data = json.decode('{"key": "value"}')
+```
+
+| Function | Scope | Return value | Use when… |
+|---|---|---|---|
+| `import` | Isolated | Table of the script's globals | You want a clean namespace. |
+| `include` | Merged into current | None | You want the names inline. |
+| `require` | Module convention | Whatever the script returns | The script is a reusable module. |
+
+---
+
+## Standard Functions
+
+### Output and errors
+
+| Function | Signature | Description |
+|---|---|---|
+| `print` | `print(value)` | Writes `value` to the console as a string. |
+| `error` | `error(message, level?)` | Raises a Lua error with the given message. `level` controls which stack frame is blamed (default `1`). |
+
+### Type inspection and conversion
+
+| Function | Signature | Description |
+|---|---|---|
+| `type` | `type(value) → string` | Returns the Lua type name: `"nil"`, `"boolean"`, `"number"`, `"string"`, `"table"`, or `"function"`. |
+| `tostring` | `tostring(value) → string` | Converts any value to a human-readable string. |
+| `tonumber` | `tonumber(num, base?) → number?` | Parses `num` as a number, optionally in the given numeric base. Returns `nil` on failure. |
+
+### Table iteration
+
+| Function | Signature | Description |
+|---|---|---|
+| `pairs` | `pairs(table) → Iterator` | Returns an iterator over all key-value pairs in `table` (hash and array parts). |
+| `ipairs` | `ipairs(table) → Iterator` | Returns an iterator over the integer-keyed sequence part of `table`, starting at index 1. |
+| `next` | `next(table, index?) → any?` | Returns the next key-value pair after `index`. Pass `nil` to start from the beginning. |
+
+```lua
+local scores = { alice = 10, bob = 7, carol = 15 }
+
+for name, score in pairs(scores) do
+    print(name .. ": " .. tostring(score))
+end
+
+local items = { "sword", "shield", "potion" }
+for i, item in ipairs(items) do
+    print(i .. " — " .. item)
+end
+```
+
+### Metatables and raw access
+
+| Function | Signature | Description |
+|---|---|---|
+| `getmetatable` | `getmetatable(obj) → table?` | Returns the metatable of `obj`, or `nil` if it has none. |
+| `setmetatable` | `setmetatable(obj, mt) → table?` | Sets the metatable of `obj` to `mt`. |
+| `rawget` | `rawget(table, index) → any?` | Reads a table field without invoking `__index`. |
+| `rawset` | `rawset(table, index, value) → table` | Writes a table field without invoking `__newindex`. |
+| `rawequal` | `rawequal(v1, v2) → boolean` | Compares two values for equality without invoking `__eq`. |
+
+---
+
+## Standard Library Highlights
+
+### `math`
+
+The `math` namespace exposes the standard Lua math library. Key constants and functions:
+
+| Name | Description |
+|---|---|
+| `math.pi` | π ≈ 3.14159… |
+| `math.huge` | Positive infinity. |
+| `math.abs(x)` | Absolute value. |
+| `math.floor(x)` | Round down to integer. |
+| `math.ceil(x)` | Round up to integer. |
+| `math.sqrt(x)` | Square root. |
+| `math.sin(x)` / `math.cos(x)` / `math.tan(x)` | Trig functions (radians). |
+| `math.asin(x)` / `math.acos(x)` / `math.atan(x)` | Inverse trig (returns radians). |
+| `math.atan2(x, y)` | Four-quadrant arctangent. |
+| `math.rad(x)` | Converts degrees to radians. |
+| `math.deg(x)` | Converts radians to degrees. |
+| `math.pow(x, y)` | `x` raised to the power `y`. |
+| `math.log(x)` | Natural logarithm. |
+| `math.max(x, ...)` / `math.min(x, ...)` | Maximum / minimum of a set of numbers. |
+| `math.fmod(x, y)` | Floating-point modulo. |
+| `math.random(m?, n?)` | Built-in random (prefer the `Random` class for seeded generation). |
+| `math.randomseed(x)` | Seeds the built-in random. |
+
+```lua
+local angle = math.atan2(direction.z, direction.x)
+local deg   = math.deg(angle)
+```
+
+### `string`
+
+String functions are available both on the `string` table and as methods on any string value.
+
+| Function | Description |
+|---|---|
+| `string.format(fmt, ...)` | C-style formatted string (`%d`, `%s`, `%f`, etc.). |
+| `string.len(s)` | Length of `s` in bytes. |
+| `string.sub(s, i, j?)` | Substring from index `i` to `j`. |
+| `string.upper(s)` / `string.lower(s)` | Case conversion. |
+| `string.find(s, pattern, init?, plain?)` | Finds `pattern` in `s`; returns start/end indices. |
+| `string.match(s, pattern, init?)` | Returns the first match of `pattern` in `s`. |
+| `string.gmatch(s, pattern)` | Iterator over all matches of `pattern` in `s`. |
+| `string.gsub(s, pattern, repl, n?)` | Replaces occurrences of `pattern` in `s`. |
+| `string.rep(s, n, sep?)` | Repeats `s` `n` times with optional separator. |
+| `string.reverse(s)` | Reverses `s`. |
+| `string.byte(s, i?, j?)` | Returns numeric byte codes. |
+| `string.char(...)` | Builds a string from numeric byte codes. |
+
+```lua
+local msg = string.format("HP: %d / %d", currentHp, maxHp)
+local upper = string.upper("hello")   -- "HELLO"
+```
+
+### `table`
+
+| Function | Description |
+|---|---|
+| `table.insert(array, pos, value)` | Inserts `value` at `pos` in `array`. |
+| `table.remove(array, pos?)` | Removes and returns the element at `pos` (default: last). |
+| `table.concat(array, sep?, i?, j?)` | Joins array elements into a string with `sep` between each. |
+| `table.sort(array, comp?)` | Sorts `array` in place. Provide `comp(a, b)` returning a negative number when `a` should come first. |
+| `table.pack(...)` | Packs arguments into a table (also sets `n` to the argument count). |
+| `table.unpack(t, i?, j?)` | Expands a table into multiple return values. |
+
+```lua
+local words = { "quest", "rolling", "adventure" }
+table.sort(words)
+print(table.concat(words, ", "))  -- adventure, quest, rolling
+```

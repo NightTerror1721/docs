@@ -1,0 +1,232 @@
+---
+title: "How to Trigger Cinematic Flyby Camera Sequences"
+description: "Use the Flyby namespace to zoom the camera to any block in the level, build multi-step cinematic sequences, and guide players to key locations."
+sidebarTitle: "Flyby Camera"
+---
+
+A flyby is a cinematic camera move where the view temporarily leaves the player and travels to a specific location in the level. During a flyby, player control is paused — the ball sits still while the camera does its work. Use flybys to point out the exit, reveal a secret area, or add dramatic flair to a story moment.
+
+---
+
+## The Two Ways to Start a Flyby
+
+The `Flyby` namespace exposes two functions:
+
+| Function | Use when… |
+|---|---|
+| `Flyby.startZoomAt(...)` | You want a simple zoom-to-a-block-and-return in one call |
+| `Flyby.start(events)` | You want full control over a multi-step sequence |
+
+---
+
+## `Flyby.startZoomAt` — Simple Zoom to a Block
+
+`startZoomAt` is the quickest way to show the player a specific block. You give it a location, how the camera should face that block, and three durations.
+
+### Signatures
+
+```lua
+--- Zoom to a BlockSlot
+function Flyby.startZoomAt(
+    slot: BlockSlot,
+    face: Face,
+    orientation: Orientation,
+    look: CameraLookPosition,
+    goingDuration: number,
+    waitDuration: number,
+    returnDuration: number
+): any
+
+--- Zoom to raw grid coordinates
+function Flyby.startZoomAt(
+    x: integer,
+    y: integer,
+    z: integer,
+    face: Face,
+    orientation: Orientation,
+    look: CameraLookPosition,
+    goingDuration: number,
+    waitDuration: number,
+    returnDuration: number
+): any
+```
+
+### Parameters Explained
+
+**`slot` / `x, y, z`** — The target block's position. `BlockSlot` is an object with integer `x`, `y`, `z` fields; you can also construct one with `BlockSlot.new(x, y, z)`.
+
+**`face: Face`** — Which face of the block the camera looks at. Combines with `orientation` to determine the exact camera angle.
+
+| Value | Meaning |
+|---|---|
+| `Face.Up` | Look at the top face |
+| `Face.Down` | Look at the bottom face |
+| `Face.Left` | Look at the left face |
+| `Face.Right` | Look at the right face |
+| `Face.Front` | Look at the front face |
+| `Face.Back` | Look at the back face |
+
+**`orientation: Orientation`** — The compass rotation of the camera view when looking at the chosen face.
+
+| Value | Meaning |
+|---|---|
+| `Orientation.North` | 0° (default) |
+| `Orientation.East` | 90° clockwise |
+| `Orientation.South` | 180° |
+| `Orientation.West` | 270° clockwise |
+
+**`look: CameraLookPosition`** — Vertical tilt of the camera.
+
+| Value | Meaning |
+|---|---|
+| `CameraLookPosition.Center` | Level view |
+| `CameraLookPosition.Up` | Tilted upward |
+| `CameraLookPosition.Down` | Tilted downward |
+
+**`goingDuration`** — Seconds the camera takes to travel *to* the target.
+
+**`waitDuration`** — Seconds the camera *holds* at the target before returning.
+
+**`returnDuration`** — Seconds the camera takes to travel *back* to the ball.
+
+---
+
+## `Flyby.start` — Full Custom Sequence
+
+For multi-stop sequences, build an array of `FlybyEvent` objects and pass them to `Flyby.start`.
+
+```lua
+--- @param events FlybyEvent[]
+function Flyby.start(events): any
+```
+
+### `FlybyEvent` Static Constructors
+
+| Method | Description |
+|---|---|
+| `FlybyEvent.moveTo(slot, face, orientation, look, duration)` | Move to a block slot |
+| `FlybyEvent.moveTo(x, y, z, face, orientation, look, duration)` | Move to raw coordinates |
+| `FlybyEvent.moveToBall(look, duration)` | Move back to the ball |
+| `FlybyEvent.rawMoveTo(position, rotation, look, duration)` | Move to a world-space `Vector3` + `Quaternion` |
+| `FlybyEvent.wait(duration)` | Hold the camera in place |
+| `FlybyEvent.message(message)` | Display an overlay message |
+| `FlybyEvent.message(message, backgroundColor)` | Display a colored overlay message |
+| `FlybyEvent.script(closure)` | Run an arbitrary Lua function mid-sequence |
+
+Each factory returns a `FlybyEvent` you insert into the events array passed to `Flyby.start`.
+
+### `FlybyEvent` Properties
+
+```lua
+FlybyEvent.type       -- integer: internal event type ID (read-only)
+FlybyEvent.isFinished -- boolean: true once this event has completed (read-only)
+```
+
+---
+
+## Example 1 — Show the Exit on Level Start
+
+Attach this script to the **Level** entity. When the level starts, the camera zooms to the exit block (assumed to be at grid position 8, 0, 8), waits for 2 seconds so the player can see it, then returns. A closeable dialog prompt replaces the standard UI until the player dismisses it.
+
+```lua
+-- Level script
+
+-- Coordinates of the exit block in the level grid
+local EXIT_X = 8
+local EXIT_Y = 0
+local EXIT_Z = 8
+
+function OnStart(self)
+    -- Zoom to the exit: 1.2s travel, 2s hold, 1s return
+    Flyby.startZoomAt(
+        EXIT_X, EXIT_Y, EXIT_Z,
+        Face.Up,
+        Orientation.North,
+        CameraLookPosition.Center,
+        1.2,  -- goingDuration
+        2.0,  -- waitDuration
+        1.0   -- returnDuration
+    )
+
+    -- After the flyby finishes (1.2 + 2.0 + 1.0 = 4.2s), show instructions
+    Level.delayAction(4.2, function()
+        Dialog.createCloseable(
+            "That's your exit! Collect all the keys to unlock it.",
+            Color.new(0.05, 0.05, 0.25, 0.9)
+        )
+    end)
+end
+```
+
+<Note>
+  `Level.delayAction` does not pause the flyby — both run concurrently. Calculate the total flyby duration (`goingDuration + waitDuration + returnDuration`) and use that as your delay so the dialog appears only after the camera has fully returned.
+</Note>
+
+---
+
+## Example 2 — Multi-Stop Cinematic Intro
+
+This example builds a three-stop sequence: the camera starts at the key pickup area, moves to the exit, shows a message, then returns to the ball.
+
+```lua
+function OnStart(self)
+    local titleColor = Color.new(0.0, 0.1, 0.3, 0.88)
+
+    Flyby.start({
+        -- Step 1: move to the key cluster (2 seconds travel, 1.5s hold)
+        FlybyEvent.moveTo(
+            BlockSlot.new(2, 0, 4),
+            Face.Up,
+            Orientation.North,
+            CameraLookPosition.Center,
+            2.0
+        ),
+        FlybyEvent.wait(1.5),
+
+        -- Step 2: display a hint while holding at the keys
+        FlybyEvent.message("Grab the keys here!", titleColor),
+        FlybyEvent.wait(1.5),
+
+        -- Step 3: sweep to the exit block
+        FlybyEvent.moveTo(
+            BlockSlot.new(8, 0, 8),
+            Face.Up,
+            Orientation.South,
+            CameraLookPosition.Down,
+            2.0
+        ),
+        FlybyEvent.wait(1.0),
+
+        -- Step 4: show where to go
+        FlybyEvent.message("Then reach this exit!", titleColor),
+        FlybyEvent.wait(1.5),
+
+        -- Step 5: return to the ball
+        FlybyEvent.moveToBall(CameraLookPosition.Center, 1.5),
+
+        -- Step 6: run a Lua callback once back at the ball
+        FlybyEvent.script(function()
+            Dialog.createCloseable(
+                "Good luck!",
+                Color.new(0.05, 0.25, 0.05, 0.9)
+            )
+        end),
+    })
+end
+```
+
+<Tip>
+  Use `FlybyEvent.script` at the end of a sequence to trigger dialogs, unlock doors, or award items exactly when the camera finishes — no need to manually time a `Level.delayAction` call.
+</Tip>
+
+---
+
+## Key Things to Remember
+
+<Warning>
+  Player control is **suspended** for the entire duration of a flyby. Do not start a flyby in response to time-critical events (for example, immediately when the ball is near a hazard) unless you intentionally want to pause the action.
+</Warning>
+
+- **`BlockSlot`** is the grid coordinate type used by `Flyby.startZoomAt` and `FlybyEvent.moveTo`. Create one with `BlockSlot.new(x, y, z)` or read it from any entity's `.blockSlot` property (for example, `Level.currentBall.blockSlot`).
+- **`Face`** and **`Orientation`** together control the exact camera angle. Experiment with `Face.Up` + `Orientation.North` as a starting point — it gives a top-down bird's-eye view.
+- **`CameraLookPosition`** adds a vertical tilt: `Down` is useful for showing something on the floor of the block, `Up` for something on the ceiling.

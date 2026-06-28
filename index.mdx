@@ -1,20 +1,50 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "RollingQuest Lua Scripting Documentation"
+sidebarTitle: "Home"
+description: "Learn how to write Lua scripts in RollingQuest's built-in editor to add custom logic, hooks, signals, and gameplay events to your levels."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+RollingQuest's built-in Lua scripting system gives level creators full control over gameplay behavior — right inside the game. This page covers everything you need to get started writing scripts that respond to game events, control level state, trigger dialog, spawn projectiles, and orchestrate cinematic sequences, all without leaving the editor.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="book-open" href="introduction">
+    Get an overview of how Lua scripting works in RollingQuest and what you can build with it.
+  </Card>
+  <Card title="Lua Basics" icon="code" href="lua-basics">
+    Learn the Lua fundamentals you need before writing your first RollingQuest script.
+  </Card>
+  <Card title="Script Editor" icon="pencil" href="script-editor">
+    Explore the built-in script editor — syntax highlighting, error output, and live testing.
+  </Card>
+  <Card title="Hooks" icon="bolt" href="concepts/hooks">
+    Discover how hooks like `OnStart`, `OnBallRoll`, and `OnDeath` let your scripts react to game events.
+  </Card>
+  <Card title="Signals" icon="signal" href="concepts/signals">
+    Use signals to communicate between entities and coordinate behavior across your level.
+  </Card>
+  <Card title="Level API" icon="layer-group" href="api/namespaces/level">
+    Browse the full Level namespace API to control score, lives, timers, dialog, and more.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Getting Started
+
+Follow these three steps to write and run your first RollingQuest script.
+
+<Steps>
+  <Step title="Open the Script Editor">
+    Inside the level editor, select your level and open the **Script Editor** panel. This is where you write all of your Lua code — no external tools or setup required.
+  </Step>
+  <Step title="Write Your First Hook">
+    Add an `OnStart` hook to run code the moment your level begins. For example, use it to display a welcome message, set the initial score, or trigger an opening camera sequence.
+
+    ```lua
+    function OnStart()
+        Level.ShowDialog("Welcome to my level!")
+    end
+    ```
+  </Step>
+  <Step title="Test In-Game">
+    Hit **Play** to launch your level directly from the editor. Your script runs immediately — check the output panel for errors and iterate until your level behaves exactly the way you want.
+  </Step>
+</Steps>

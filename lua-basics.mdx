@@ -1,0 +1,461 @@
+---
+title: "Lua Basics: A Beginner's Guide to Scripting"
+description: "Learn the Lua language from scratch — variables, types, functions, tables, and control flow — with examples tailored to RollingQuest."
+sidebarTitle: "Lua Basics"
+---
+
+If you have never written code before, this page is for you. Lua is a small, friendly scripting language designed to be embedded inside other programs — and in RollingQuest it is the language you use to add custom behavior to your levels. You do not need to install anything; the game's built-in [script editor](/script-editor) is all you need. Work through each section in order and you will have a solid enough foundation to start writing real game scripts by the end.
+
+---
+
+## What is Lua?
+
+Lua (pronounced *LOO-ah*) is a lightweight scripting language created in 1993. It is designed to be simple, fast, and easy to embed in other software. In RollingQuest, every script you write is a Lua file. The game reads your file, executes it, and calls specific functions inside it when game events happen.
+
+A Lua script is just plain text. Each line is an *instruction* that tells the game to do something — store a value, make a decision, repeat an action, or call a function. You will learn all of these one by one below.
+
+---
+
+## Comments
+
+Before anything else, learn comments. A comment is a line (or part of a line) the game completely ignores — it is there only for you to read.
+
+```lua
+-- This is a single-line comment. The game ignores everything after the two dashes.
+
+local x = 10 -- You can also put a comment at the end of a line of code.
+
+--[[
+  This is a multi-line comment.
+  Everything between the opening and closing brackets is ignored.
+  Use it for longer explanations.
+]]
+```
+
+Get into the habit of writing comments to explain *why* your code does something. You will thank yourself later.
+
+---
+
+## Data Types
+
+Every value in Lua has a type. There are six types you will use regularly.
+
+### `nil` — nothing
+
+`nil` means the absence of a value. A variable that has never been set, or that you deliberately clear, holds `nil`.
+
+```lua
+local myVar -- myVar is nil here because it has not been assigned yet
+myVar = nil  -- explicitly setting it to nil
+```
+
+### `boolean` — true or false
+
+A boolean holds exactly one of two values: `true` or `false`. You use booleans to make decisions.
+
+```lua
+local levelCompleted = false
+local ballIsAlive    = true
+```
+
+### `number` — integers and decimals
+
+Lua uses one number type for both whole numbers and decimal numbers.
+
+```lua
+local lives    = 3       -- whole number
+local speed    = 1.5     -- decimal
+local score    = 100
+local fraction = 0.25
+```
+
+You can use standard arithmetic with numbers (covered in the Operators section below).
+
+### `string` — text
+
+A string is a sequence of characters enclosed in double quotes or single quotes. Both styles work identically.
+
+```lua
+local greeting   = "Hello, adventurer!"
+local levelName  = 'Crystal Cave'
+local empty      = ""   -- an empty string is still a valid string
+```
+
+To join two strings together, use the `..` concatenation operator:
+
+```lua
+local firstName = "Rolling"
+local lastName  = "Quest"
+local fullName  = firstName .. " " .. lastName  -- "Rolling Quest"
+```
+
+### `table` — collections of values
+
+Tables are Lua's only built-in data structure and they are extremely versatile. You use them both as *arrays* (ordered lists) and as *dictionaries* (named collections).
+
+**Array-style table** (values indexed by number, starting at 1):
+
+```lua
+local fruits = { "apple", "banana", "cherry" }
+
+print(fruits[1])  -- apple
+print(fruits[2])  -- banana
+print(fruits[3])  -- cherry
+```
+
+**Dictionary-style table** (values indexed by name):
+
+```lua
+local player = {
+  name  = "Hero",
+  lives = 3,
+  score = 0,
+}
+
+print(player.name)   -- Hero
+print(player.lives)  -- 3
+```
+
+You can also mix styles, nest tables inside other tables, and add or remove entries at any time. Tables are covered in more depth in their own section below.
+
+### `function` — reusable blocks of code
+
+Functions are values too. You can store a function in a variable, pass it to another function, or return it. Functions are covered fully in their own section below.
+
+```lua
+local greet = function(name)
+  return "Hello, " .. name .. "!"
+end
+
+print(greet("world"))  -- Hello, world!
+```
+
+---
+
+## Variables
+
+A variable is a named container that holds a value. In Lua you create a variable with the `local` keyword.
+
+```lua
+local playerName = "Hero"
+local lives      = 3
+local isPlaying  = true
+```
+
+<Tip>
+  Always use `local` unless you have a specific reason not to. Without `local` a variable becomes *global* — it is accessible from any script, which can cause hard-to-find bugs when two scripts accidentally use the same name.
+</Tip>
+
+You can change (reassign) a variable's value at any time, even to a different type:
+
+```lua
+local score = 0      -- score is a number
+score = score + 10   -- score is now 10
+score = "finished"   -- score is now a string (unusual but valid in Lua)
+```
+
+### Naming conventions
+
+- Use descriptive names: `remainingLives` is clearer than `rl`.
+- Variable names are case-sensitive: `score` and `Score` are two different variables.
+- By convention, local variables use `camelCase` (first word lowercase, subsequent words capitalized).
+- Constants (values you never intend to change) are often written in `ALL_CAPS`.
+
+---
+
+## Operators
+
+### Arithmetic
+
+| Operator | Meaning            | Example        | Result |
+|----------|--------------------|----------------|--------|
+| `+`      | Addition           | `3 + 2`        | `5`    |
+| `-`      | Subtraction        | `10 - 4`       | `6`    |
+| `*`      | Multiplication     | `3 * 4`        | `12`   |
+| `/`      | Division           | `7 / 2`        | `3.5`  |
+| `%`      | Modulo (remainder) | `10 % 3`       | `1`    |
+| `^`      | Exponentiation     | `2 ^ 8`        | `256`  |
+
+```lua
+local total = 5 + 3      -- 8
+local half  = total / 2  -- 4.0
+local mod   = 11 % 4     -- 3  (11 divided by 4 leaves remainder 3)
+```
+
+### Comparison
+
+Comparison operators always produce a `boolean` result.
+
+| Operator | Meaning                  | Example    | Result  |
+|----------|--------------------------|------------|---------|
+| `==`     | Equal to                 | `3 == 3`   | `true`  |
+| `~=`     | Not equal to             | `3 ~= 4`   | `true`  |
+| `<`      | Less than                | `2 < 5`    | `true`  |
+| `>`      | Greater than             | `5 > 2`    | `true`  |
+| `<=`     | Less than or equal to    | `3 <= 3`   | `true`  |
+| `>=`     | Greater than or equal to | `4 >= 5`   | `false` |
+
+<Note>
+  In Lua, "not equal" is written `~=`, not `!=` as in many other languages.
+</Note>
+
+### Logical
+
+| Operator | Meaning                                         | Example              |
+|----------|-------------------------------------------------|----------------------|
+| `and`    | True only if both sides are true                | `true and false` → `false` |
+| `or`     | True if at least one side is true               | `true or false` → `true`   |
+| `not`    | Flips a boolean (`true` → `false`, vice versa)  | `not true` → `false`       |
+
+```lua
+local hasKey  = true
+local doorOpen = false
+
+if hasKey and not doorOpen then
+  -- player has the key and the door is not already open
+end
+```
+
+### String concatenation
+
+Use `..` to join strings. Numbers are automatically converted to strings when concatenated.
+
+```lua
+local level  = 3
+local msg    = "You are on level " .. level  -- "You are on level 3"
+```
+
+---
+
+## Control Flow
+
+Control flow lets your script make decisions and repeat actions.
+
+### `if / elseif / else / end`
+
+An `if` block runs its code only when the condition is `true`.
+
+```lua
+local lives = 2
+
+if lives > 1 then
+  -- runs when lives is more than 1
+  print("You have lives remaining!")
+elseif lives == 1 then
+  -- runs when lives is exactly 1
+  print("Last life!")
+else
+  -- runs when neither condition above was true
+  print("Game over!")
+end
+```
+
+Every `if` must be closed with `end`. You can have as many `elseif` branches as you need, and the `else` branch is optional.
+
+### `while` loop
+
+A `while` loop keeps running as long as its condition stays `true`.
+
+```lua
+local count = 0
+
+while count < 5 do
+  count = count + 1
+end
+-- count is now 5
+```
+
+<Warning>
+  Make sure the condition eventually becomes `false`, or the loop will run forever and freeze the game.
+</Warning>
+
+### `for` loop — numeric
+
+A numeric `for` loop counts from a start value to an end value, one step at a time.
+
+```lua
+-- prints 1, 2, 3, 4, 5
+for i = 1, 5 do
+  print(i)
+end
+
+-- prints 10, 8, 6, 4, 2  (counting down by 2)
+for i = 10, 1, -2 do
+  print(i)
+end
+```
+
+### `for` loop — generic with `ipairs` and `pairs`
+
+Use `ipairs` to iterate over an array-style table in order:
+
+```lua
+local colors = { "red", "green", "blue" }
+
+for index, color in ipairs(colors) do
+  print(index, color)
+  -- 1  red
+  -- 2  green
+  -- 3  blue
+end
+```
+
+Use `pairs` to iterate over a dictionary-style table (order is not guaranteed):
+
+```lua
+local stats = { speed = 5, jump = 3, power = 7 }
+
+for key, value in pairs(stats) do
+  print(key .. " = " .. value)
+end
+```
+
+---
+
+## Functions
+
+A function is a named block of code you can run (call) as many times as you like.
+
+### Defining and calling a function
+
+```lua
+-- define the function
+local function sayHello()
+  print("Hello!")
+end
+
+-- call the function
+sayHello()  -- prints: Hello!
+sayHello()  -- prints: Hello!  (runs again)
+```
+
+### Parameters and return values
+
+Functions can accept *parameters* (inputs) and *return* a value as output.
+
+```lua
+local function add(a, b)
+  return a + b
+end
+
+local result = add(3, 4)  -- result is 7
+print(result)             -- prints: 7
+```
+
+### Multiple return values
+
+Lua lets a function return more than one value at once:
+
+```lua
+local function minMax(a, b)
+  if a < b then
+    return a, b   -- return two values separated by a comma
+  else
+    return b, a
+  end
+end
+
+local smallest, largest = minMax(10, 3)
+print(smallest)  -- 3
+print(largest)   -- 10
+```
+
+---
+
+## Tables (in depth)
+
+You were introduced to tables in the data types section. Here is a closer look.
+
+### Creating tables
+
+```lua
+-- empty table
+local data = {}
+
+-- array-style (integer keys, starting at 1)
+local scores = { 100, 250, 75, 400 }
+
+-- dictionary-style (string keys)
+local config = {
+  title    = "My Level",
+  maxTime  = 120,
+  hasFruit = true,
+}
+```
+
+### Reading and writing values
+
+```lua
+-- array access uses square brackets with the index number
+print(scores[1])   -- 100
+scores[5] = 600    -- add a new entry
+
+-- dictionary access uses dot notation or square brackets with a string
+print(config.title)         -- My Level
+print(config["maxTime"])    -- 120
+config.author = "You"       -- add a new key
+```
+
+### Nested tables
+
+Tables can hold other tables:
+
+```lua
+local level = {
+  name  = "Ice Mountain",
+  start = { x = 0, y = 1, z = 0 },
+}
+
+print(level.start.x)  -- 0
+```
+
+### Iterating
+
+```lua
+local items = { "key", "coin", "gem" }
+
+for i, item in ipairs(items) do
+  print(i, item)
+end
+
+local props = { color = "blue", weight = 2 }
+
+for key, val in pairs(props) do
+  print(key, val)
+end
+```
+
+---
+
+## Applying Lua to RollingQuest
+
+You now know enough Lua to write real game scripts. Here is how the pieces connect:
+
+- **Hooks are just functions.** You define a function with a specific name (`OnStart`, `OnBallRoll`, `OnDeath`, etc.) and the game calls it automatically when that event happens.
+- **The entity is passed as `self`.** The first parameter of every hook is the entity the script is attached to — a `Level`, `Block`, `Ball`, etc.
+- **API namespaces are global tables.** `Dialog`, `Level`, `Logger`, and the rest are just tables with functions in them, available in every script.
+
+### Your first complete script
+
+The script below is a Level script. It uses a variable, an `if` statement, and `Dialog.createTemporary` to greet the player when the level starts.
+
+```lua
+-- Level script: show a greeting when the level begins
+
+local welcomeShown = false  -- we only want to show this once
+
+function OnStart(self)
+  if not welcomeShown then
+    welcomeShown = true
+
+    local levelName = "Crystal Cave"
+    Dialog.createTemporary("Welcome to " .. levelName .. "! Good luck!", 4)
+  end
+end
+```
+
+When the level starts the engine calls `OnStart`, passing the level entity as `self`. The script checks a boolean flag to guard against showing the message twice, builds a greeting string with `..`, and calls `Dialog.createTemporary` to display it for four seconds.
+
+<Tip>
+  Move on to [Script Editor](/script-editor) to learn how to create a script file, attach it to a level entity, and run it in the game.
+</Tip>

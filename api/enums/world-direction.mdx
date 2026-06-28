@@ -1,0 +1,49 @@
+---
+title: "WorldDirection Enum Reference for RollingQuest Scripts"
+description: "Complete reference for the WorldDirection enum, which represents the six cardinal directions in the RollingQuest 3D world space."
+sidebarTitle: "WorldDirection"
+---
+
+The `WorldDirection` enum represents the six cardinal directions available in the RollingQuest 3D world. Unlike the `Face` enum, which describes sides relative to an individual block's local geometry, `WorldDirection` expresses movement or orientation relative to the global world coordinate system. You use it whenever you need to specify the direction an entity should move, the axis along which a force is applied, or the orientation of a path segment — in short, any time the API needs to know "which way in the world" rather than "which face of this block."
+
+## Values
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `WorldDirection.Up` | `0` | Points upward along the global vertical (Y) axis. |
+| `WorldDirection.Down` | `1` | Points downward along the global vertical (Y) axis. |
+| `WorldDirection.Left` | `2` | Points in the negative horizontal direction along the X axis. |
+| `WorldDirection.Right` | `3` | Points in the positive horizontal direction along the X axis. |
+| `WorldDirection.Front` | `4` | Points toward the camera's default forward direction along the Z axis. |
+| `WorldDirection.Back` | `5` | Points away from the camera's default forward direction along the Z axis. |
+
+## Usage Example
+
+The example below moves an entity one step in the `Right` direction, then applies a push force `Up` when a trigger fires:
+
+```lua
+-- Move an entity one unit to the right in world space
+entity:move(WorldDirection.Right)
+
+-- Apply an upward impulse to the ball when entering a vent block
+function onVentActivated()
+    Ball.applyImpulse(WorldDirection.Up, 5.0)
+end
+```
+
+You can also use `WorldDirection` to define patrol paths for enemies:
+
+```lua
+local patrolPath = {
+    WorldDirection.Front,
+    WorldDirection.Right,
+    WorldDirection.Back,
+    WorldDirection.Left,
+}
+
+local step = 1
+function onEnemyStep(enemy)
+    enemy:moveInDirection(patrolPath[step])
+    step = (step % #patrolPath) + 1
+end
+```

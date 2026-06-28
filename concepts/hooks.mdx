@@ -1,0 +1,230 @@
+---
+title: "Understanding Hooks in RollingQuest Scripts"
+description: "Learn how hooks let your Lua scripts respond to game events automatically, with full hook signatures for every entity type."
+sidebarTitle: "Hooks"
+---
+
+Hooks are the foundation of RollingQuest scripting. When the game detects an event — the level starting, the ball rolling onto a block, an enemy dying — it looks for a matching global function in your script and calls it automatically. You don't register listeners or subscribe to events; you simply define the function with the right name, and the game does the rest.
+
+## What Is a Hook?
+
+A hook is a **global Lua function** whose name matches one of the game's predefined event names. The game calls your function when the corresponding event fires, passing in contextual data as parameters.
+
+For example, a Level script that prints a message when play begins looks like this:
+
+```lua
+function OnStart(self)
+    print("Level started!")
+end
+```
+
+The function name `OnStart` is the hook name. The game recognises it and calls it at the right moment.
+
+## The `self` Parameter
+
+Every hook receives `self` as its first argument. The value of `self` depends on which entity type the script is attached to:
+
+| Script attached to | `self` type |
+|--------------------|-------------|
+| Level              | `Level`     |
+| Ball               | `Ball`      |
+| Block              | `Block`     |
+| Side               | `Side`      |
+| Item               | `Item`      |
+| Enemy              | `Enemy`     |
+
+Use `self` to read properties of the entity and call methods on it from within the hook.
+
+---
+
+## Hooks by Entity Type
+
+### Level Hooks
+
+Hooks available in a script attached to the level itself.
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `OnStart` | `function OnStart(self)` | Called once when the level begins. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame; `deltaTime` is the elapsed time in seconds since the last frame. |
+| `OnWon` | `function OnWon(self)` | Called when the player successfully completes the level. |
+| `OnLost` | `function OnLost(self)` | Called when the player loses the level. |
+| `OnSignal` | `function OnSignal(self)` | Called when the level receives an inbound signal. |
+
+```lua
+---@param self Level
+---@param deltaTime number
+function OnUpdate(self, deltaTime)
+    -- runs every frame
+end
+```
+
+---
+
+### Ball Hooks
+
+Hooks available in a script attached to a ball entity.
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `OnSpawn` | `function OnSpawn(self)` | Called when the ball first spawns into the level. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the ball is alive. |
+| `OnBallRoll` | `function OnBallRoll(self, rollIn, side)` | Called when the ball rolls onto or off of a side; `rollIn` is `true` when rolling on, `false` when rolling off. |
+| `OnProjectileCollide` | `function OnProjectileCollide(self, projectile)` | Called when the ball is hit by a projectile. |
+| `OnExit` | `function OnExit(self)` | Called when the ball exits the level. |
+| `OnDeath` | `function OnDeath(self)` | Called when the ball dies. |
+| `OnSignal` | `function OnSignal(self, signal)` | Called when the ball receives a signal. |
+| `OnDestroy` | `function OnDestroy(self)` | Called just before the ball is removed from the level. |
+
+---
+
+### Block Hooks
+
+Hooks available in a script attached to a block entity.
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `SpawnCondition` | `function SpawnCondition(self) → boolean` | Called before the block spawns; return `false` to prevent it from appearing. |
+| `OnSpawn` | `function OnSpawn(self)` | Called when the block spawns into the level. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame. |
+| `OnBallRoll` | `function OnBallRoll(self, rollIn, side, ball)` | Called when the ball rolls onto or off of one of the block's sides. |
+| `OnProjectileCollide` | `function OnProjectileCollide(self, projectile)` | Called when a projectile strikes the block. |
+| `OnDestroy` | `function OnDestroy(self)` | Called just before the block is removed. |
+| `OnSignal` | `function OnSignal(self, signal)` | Called when the block receives a signal. |
+| `OnCustomEvent` | `function OnCustomEvent(self, event)` | Called when a custom game event is dispatched to the block. |
+
+---
+
+### Side Hooks
+
+Hooks available in a script attached to a side (one face of a block).
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `OnSpawn` | `function OnSpawn(self)` | Called when the side spawns. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame. |
+| `OnBallRoll` | `function OnBallRoll(self, rollIn, ball)` | Called when the ball rolls onto or off of this side specifically. |
+| `OnProjectileCollide` | `function OnProjectileCollide(self, projectile)` | Called when a projectile hits this side. |
+| `OnDestroy` | `function OnDestroy(self)` | Called just before the side is removed. |
+| `OnSignal` | `function OnSignal(self, signal)` | Called when the side receives a signal. |
+| `OnCustomEvent` | `function OnCustomEvent(self, event)` | Called when a custom event targets this side. |
+
+---
+
+### Item Hooks
+
+Hooks available in a script attached to an item entity.
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `SpawnCondition` | `function SpawnCondition(self) → boolean` | Return `false` to prevent the item from spawning. |
+| `OnSpawn` | `function OnSpawn(self)` | Called when the item spawns. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the item is active. |
+| `OnCollect` | `function OnCollect(self, ball)` | Called when the ball collects this item. |
+| `OnProjectileCollide` | `function OnProjectileCollide(self, projectile)` | Called when a projectile hits the item. |
+| `OnDestroy` | `function OnDestroy(self)` | Called just before the item is removed. |
+| `OnSignal` | `function OnSignal(self, signal)` | Called when the item receives a signal. |
+| `OnCustomEvent` | `function OnCustomEvent(self, event)` | Called when a custom event targets this item. |
+
+---
+
+### Enemy Hooks
+
+Hooks available in a script attached to an enemy entity.
+
+| Hook | Signature | Description |
+|------|-----------|-------------|
+| `SpawnCondition` | `function SpawnCondition(self) → boolean` | Return `false` to prevent the enemy from spawning. |
+| `OnSpawn` | `function OnSpawn(self)` | Called when the enemy spawns. |
+| `OnUpdate` | `function OnUpdate(self, deltaTime)` | Called every frame while the enemy is alive. |
+| `OnProjectileCollide` | `function OnProjectileCollide(self, projectile)` | Called when a projectile hits the enemy. |
+| `OnDeath` | `function OnDeath(self)` | Called when the enemy dies. |
+| `OnDestroy` | `function OnDestroy(self)` | Called just before the enemy is removed. |
+| `OnSignal` | `function OnSignal(self, signal)` | Called when the enemy receives a signal. |
+| `OnCustomEvent` | `function OnCustomEvent(self, event)` | Called when a custom event targets this enemy. |
+
+---
+
+## Special Hooks
+
+### SpawnCondition
+
+`SpawnCondition` is a hook that applies to **Block**, **Item**, and **Enemy** scripts. The game calls it before the entity is placed in the level, and your return value decides whether the entity actually appears.
+
+Return `true` (or nothing) to allow the spawn. Return `false` to suppress it.
+
+```lua
+---@param self Block
+---@return boolean
+function SpawnCondition(self)
+    -- Only spawn this block if campaign progress flag is set
+    return Level.campaignGlobalData:getBool("bridge_unlocked", false)
+end
+```
+
+<Note>
+`SpawnCondition` is called very early in level setup. Avoid referencing other entities that may not exist yet.
+</Note>
+
+### OnCustomEvent
+
+`OnCustomEvent` is available on **Block**, **Side**, **Item**, and **Enemy** scripts. It fires when the game dispatches a custom event specifically to that entity — useful for integrating with game systems that extend the default event set.
+
+```lua
+---@param self Block
+---@param event CustomEvent
+function OnCustomEvent(self, event)
+    print("Received custom event: " .. tostring(event))
+end
+```
+
+---
+
+## Complete Example
+
+Below is a full Block script that uses four hooks together: it conditionally spawns, sets up state on spawn, reacts to the ball rolling across it, and cleans up when destroyed.
+
+```lua
+-- Block script: a fragile platform that breaks after one roll
+
+local hasBeenRolled = false
+
+---@param self Block
+---@return boolean
+function SpawnCondition(self)
+    -- Only spawn if the player hasn't already broken it this session
+    return not Level.localData:getBool("fragile_broken_" .. self.name, false)
+end
+
+---@param self Block
+function OnSpawn(self)
+    hasBeenRolled = false
+    print(self.name .. " fragile platform ready.")
+end
+
+---@param self Block
+---@param rollIn boolean
+---@param side Side
+---@param ball Ball
+function OnBallRoll(self, rollIn, side, ball)
+    if rollIn and not hasBeenRolled then
+        hasBeenRolled = true
+        print("Ball rolled on! Scheduling destruction...")
+        -- Give the player half a second to move off before it breaks
+        Level.delayAction(0.5, function()
+            self:disable()
+        end)
+    end
+end
+
+---@param self Block
+function OnDestroy(self)
+    -- Persist that this block was broken so SpawnCondition suppresses it on respawn
+    Level.localData:setBool("fragile_broken_" .. self.name, true)
+    print(self.name .. " has been destroyed.")
+end
+```
+
+<Tip>
+You only need to define the hooks you actually use. The game silently ignores any hook that isn't present in your script.
+</Tip>

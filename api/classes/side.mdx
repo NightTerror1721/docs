@@ -1,0 +1,172 @@
+---
+title: "Side — Block Face Entity API Reference"
+description: "API reference for the Side class in RollingQuest Lua scripting. Access face vectors, block and slot refs, attached items, decorations, and basis helpers."
+sidebarTitle: "Side"
+---
+
+The `Side` class represents one of the six faces of a [`Block`](/api/classes/block). Every side has its own identity, spatial vectors, and may hold an item or a decoration. Scripts attached to a side receive it as `self` in hooks such as `OnBallRoll`, and the ball's current ground side is always available via `ball.currentGroundSide`. RollingQuest defines many typed sub-classes of `Side` — for example `SideButton` or `SideLaser` — each inheriting all base properties while adding their own.
+
+## Properties
+
+### Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Side` (`2`). |
+| `id` | `integer` | ✅ | Unique numeric identifier of this side. |
+| `name` | `string` | ✅ | Name of the side, taken from its template. |
+| `tag` | `string` | ✅ | Tag used for scripted lookup and grouping. |
+
+### Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the side's origin corner. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the side. |
+| `centerPosition` | `Vector3` | ✅ | World-space position of the side's centre point. |
+| `normalVector` | `Vector3` | ✅ | Outward-pointing normal vector of the side. |
+| `tangentVector` | `Vector3` | ✅ | Tangent vector lying in the plane of the side. |
+| `bitangentVector` | `Vector3` | ✅ | Bitangent vector perpendicular to both normal and tangent. |
+
+### Geometry
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `block` | `Block` | ✅ | The parent block this side belongs to. |
+| `blockSlot` | `BlockSlot` | ✅ | Grid slot of the parent block. |
+| `face` | `Face` | ✅ | Which face of the block this side occupies. |
+| `faceName` | `string` | ✅ | Human-readable name of the face (e.g. `"Up"`, `"Front"`). |
+| `section` | `string` | ✅ | ID of the level section that contains this side. |
+
+### Rules
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `isIntangible` | `boolean` | ✅ | `true` when the side has no physical collision. |
+| `hasJumpBan` | `boolean` | ✅ | `true` when jumping is prohibited while on this side. |
+| `hasMoveBan` | `boolean` | ✅ | `true` when movement is prohibited while on this side. |
+
+### Attachments
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `item` | `Item` | ✅ | The item placed on this side, or `nil`. |
+| `hasItem` | `boolean` | ✅ | `true` when an item is present on this side. |
+| `decoration` | `Decoration` | ✅ | The decoration placed on this side, or `nil`. |
+| `hasDecoration` | `boolean` | ✅ | `true` when a decoration is present on this side. |
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the side. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this side. |
+
+## Methods
+
+### getAssociatedBasis
+
+Returns the `Basis` that corresponds to a ball standing on this side at a given orientation. Three overloads are available:
+
+```lua
+--- @param orientation Orientation
+--- @return Basis
+function Side:getAssociatedBasis(orientation)
+
+--- @param orientation integer
+--- @return Basis
+function Side:getAssociatedBasis(orientation)
+
+--- @return Basis
+function Side:getAssociatedBasis()  -- uses default orientation
+```
+
+### isDirectionBlocked
+
+```lua
+--- @param orientation Orientation
+--- @return boolean
+function Side:isDirectionBlocked(orientation)
+
+--- @param orientation integer
+--- @return boolean
+function Side:isDirectionBlocked(orientation)
+```
+
+Returns `true` when the given orientation is a blocked movement direction for the ball on this side.
+
+### Type-cast helpers
+
+Use these to narrow a generic entity reference to a concrete type. Each throws an error if the cast is invalid.
+
+```lua
+function Side:asLevel()      -- returns Level
+function Side:asBlock()      -- returns Block
+function Side:asSide()       -- returns Side
+function Side:asItem()       -- returns Item
+function Side:asEnemy()      -- returns Enemy
+function Side:asBall()       -- returns Ball
+function Side:asDecoration() -- returns Decoration
+```
+
+## SideData
+
+`SideData` is the raw, mutable representation used when constructing level data (e.g. in `OnLevelLoad`). It carries the optional `template`, `scriptRef`, `scriptTag`, `scriptVars`, and `properties` fields, plus references to an `ItemData` and a `DecorationData`. The boolean flags `hasOwnTemplate`, `hasValidItem`, and `hasValidDecoration` let you check which optional fields are populated.
+
+Key `SideData` methods: `clearItem()`, `clearDecoration()`, `clear()`.
+
+## Side Subtypes
+
+The following concrete sub-classes all inherit every property and method from `Side`. You receive the most-specific type automatically when accessing sides at runtime.
+
+| Sub-class | Description |
+|---|---|
+| `SideNormal` | A plain, unremarkable side with no special behaviour. |
+| `SideButton` | A pressable button that triggers signals when the ball rolls over it. |
+| `SideCheckpoint` | Saves the ball's respawn position when touched. |
+| `SideExit` | Ends the level or transitions to the next section when reached. |
+| `SideJumpPad` | Launches the ball into the air on contact. |
+| `SideLaser` | Fires a laser beam that kills the ball on contact. |
+| `SideMagnet` | Pulls or pushes the ball with a magnetic force. |
+| `SideStaticSpikes` | Permanently extended spikes that destroy the ball. |
+| `SideRetractableSpike` | Spikes that extend and retract on a timed cycle. |
+| `SideSensorSpikes` | Spikes that extend when the ball is detected nearby. |
+| `SidePatternSpike` | Spikes that follow a programmed sequence pattern. |
+| `SideTrampoline` | Bounces the ball upward on contact. |
+| `SideVent` | Propels the ball in a fixed direction with air pressure. |
+| `SideIcy` | Reduces friction, causing the ball to slide. |
+| `SideBurned` | Applies a burning effect to the ball on contact. |
+| `SideOil` | Slows the ball and may interact with fire sides. |
+| `SideSand` | Slows movement with a sandy surface effect. |
+| `SidePlasma` | Applies an energy-based hazard to the ball. |
+| `SideSawblades` | Rotating blades that destroy the ball on contact. |
+| `SideTeslaCoil` | Periodically discharges electricity. |
+| `SideFlamethrower` | Continuously or periodically emits flames. |
+| `SideTimeStop` | Temporarily halts the level timer. |
+| `SideTeleport` | Teleports the ball to a linked teleport destination. |
+| `SidePortalExit` | The exit point of a portal pair. |
+| `SideOneWay` | Allows movement in only one direction. |
+| `SideMultiWay` | Allows movement in multiple specified directions. |
+| `SideRotator` | Rotates the ball's facing direction. |
+| `SideSwitch` | Toggles blocks or other level elements. |
+| `SideButton` | Triggers connected signals when pressed. |
+| `SidePressurePlate` | Activates only when the ball is resting on it. |
+| `SideCheckpoint` | Marks a respawn position. |
+| `SideLightSensor` | Detects light conditions to trigger other elements. |
+
+## Usage Example
+
+The following `OnBallRoll` hook is attached to a side script and prints the face name every time the ball rolls onto the side:
+
+```lua
+function OnBallRoll(self, ball)
+    -- self is a Side
+    Log.info("Ball rolled onto face: " .. self.faceName)
+
+    -- Grant the ball a shield when it lands on this side
+    if self.tag == "safe_pad" then
+        ball:enableShield(3.0)
+    end
+
+    -- Check whether the side carries an item
+    if self.hasItem then
+        local item = self.item
+        Log.info("Side has item: " .. item.name)
+    end
+end
+```

@@ -1,0 +1,177 @@
+---
+title: "Timer — Countdown Timers for RollingQuest Scripts"
+description: "Reference for the Timer class in RollingQuest Lua scripts. Covers start, stop, addTime, subtractTime, and how to build cooldowns and repeating actions inside OnUpdate hooks."
+sidebarTitle: "Timer"
+---
+
+The `Timer` class lets you measure and control the passage of time inside a script. You start a timer with a duration in seconds, optionally attach finish and tick callbacks, and then check its state each frame. Timers are ideal for enforcing cooldowns, delaying actions, and scheduling periodic events without blocking script execution. A single `Timer` instance can be started, stopped, and restarted as many times as you need, making it easy to reuse the same object across multiple cooldown cycles.
+
+## Constructors
+
+`Timer` is instantiated with the global `new` helper:
+
+```lua
+local cooldown = new(Timer)
+```
+
+No arguments are required at construction time. You call `start` to actually begin counting.
+
+---
+
+## Instance Properties
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `isRunning` | `boolean` | Yes | `true` while the timer is actively counting down. |
+| `isStopped` | `boolean` | Yes | `true` when the timer is not running. |
+| `maxTime` | `number` | Yes | The total duration the timer was started with, in seconds. |
+| `remainingTime` | `number` | Yes | How many seconds remain before the timer finishes. |
+
+---
+
+## Instance Methods
+
+### `start`
+
+Starts the timer. You can provide optional callbacks and an optional initial elapsed time.
+
+```lua
+--- Start with a duration only
+--- @param time number
+function Timer:start(time)
+
+--- Start with a finish callback
+--- @param time number
+--- @param onFinish fun(): void
+function Timer:start(time, onFinish)
+
+--- Start with finish and tick callbacks
+--- @param time number
+--- @param onFinish fun(): void
+--- @param onTick fun(): void
+function Timer:start(time, onFinish, onTick)
+
+--- Start at an offset into the countdown (initialTime seconds already elapsed)
+--- @param time number
+--- @param onFinish fun(): void
+--- @param onTick fun(): void
+--- @param initialTime number
+function Timer:start(time, onFinish, onTick, initialTime)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `time` | `number` | Duration in seconds. |
+| `onFinish` | `fun(): void` | Called once when the countdown reaches zero. |
+| `onTick` | `fun(): void` | Called every game tick while the timer is running. |
+| `initialTime` | `number` | Seconds to treat as already elapsed when starting. |
+
+### `stop`
+
+Stops the timer. Optionally fires the `onFinish` callback even though the timer did not reach zero naturally.
+
+```lua
+--- Stop silently
+function Timer:stop()
+
+--- Stop and optionally invoke the finish callback
+--- @param callOnFinishCallback boolean
+function Timer:stop(callOnFinishCallback)
+```
+
+### `addTime`
+
+Adds seconds to the remaining time. Optionally expands `maxTime` if the addition would push remaining time above the current maximum.
+
+```lua
+--- @param time number
+function Timer:addTime(time)
+
+--- @param time number
+--- @param updateMaxTimeIfItIsNeeded boolean
+function Timer:addTime(time, updateMaxTimeIfItIsNeeded)
+```
+
+### `subtractTime`
+
+Subtracts seconds from the remaining time. This can trigger the finish callback if remaining time drops to zero or below.
+
+```lua
+--- @param time number
+function Timer:subtractTime(time)
+```
+
+---
+
+## Usage Examples
+
+### Cooldown using OnUpdate
+
+The pattern below fires a projectile immediately on the first call, then waits 2 seconds before allowing another shot.
+
+```lua
+local fireCooldown = new(Timer)
+
+function OnStart()
+    -- Start the cooldown expired so the first shot is available immediately
+    fireCooldown:start(2, nil, nil, 2)
+end
+
+function OnUpdate(delta)
+    local playerWantsToFire = Input.getButton("Fire")
+
+    if playerWantsToFire and fireCooldown.isStopped then
+        -- Fire the projectile
+        spawnProjectile(self.transform.position, self.transform.rotation)
+
+        -- Reset the cooldown timer
+        fireCooldown:start(2, function()
+            -- Timer finished — the player may fire again (timer stops itself)
+        end)
+    end
+end
+```
+
+### One-shot delayed action with a finish callback
+
+```lua
+local delayTimer = new(Timer)
+
+function OnStart()
+    delayTimer:start(5, function()
+        print("5 seconds have passed — triggering trap!")
+        activateTrap()
+    end)
+end
+```
+
+### Counting down with a per-tick callback
+
+```lua
+local countdownTimer = new(Timer)
+
+function OnStart()
+    countdownTimer:start(
+        10,
+        function()                          -- onFinish
+            print("Time is up!")
+        end,
+        function()                          -- onTick (every frame)
+            local remaining = math.ceil(countdownTimer.remainingTime)
+            HUD.setCountdown(remaining)
+        end
+    )
+end
+```
+
+### Extending a running timer
+
+```lua
+-- Player picks up a time-bonus item
+function onTimeBonusPickup()
+    if countdownTimer.isRunning then
+        countdownTimer:addTime(5, true)   -- add 5 seconds, grow maxTime if needed
+        print("Bonus! +5 seconds added.")
+    end
+end
+```

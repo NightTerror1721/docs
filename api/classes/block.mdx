@@ -1,0 +1,144 @@
+---
+title: "Block — Game World Block Entity API Reference"
+description: "API reference for the Block class in RollingQuest Lua scripting. Access block identity, six sides, neighbors, movement state, and enable/disable methods."
+sidebarTitle: "Block"
+---
+
+The `Block` class represents a single block in the RollingQuest game world — the fundamental building unit that the ball rolls across. Scripts attached to a block receive it as `self` in hooks such as `OnBallRoll` and `OnBallLand`. From a `Block` reference you can inspect every side and neighboring block, read movement state, toggle tangibility, and mark the block as visited.
+
+> **Related types:** Each side of a block is a [`Side`](/api/classes/side) instance. The block's grid position is described by a `BlockSlot`. The raw data representation used at level-build time is `BlockData`.
+
+## Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Block` (`1`). |
+| `id` | `integer` | ✅ | Unique numeric identifier of the block. |
+| `name` | `string` | ✅ | Name of the block (set in the editor). |
+| `tag` | `string` | ✅ | Tag used for grouping and scripted lookup. |
+
+## Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the block's centre. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the block. |
+| `slot` | `BlockSlot` | ✅ | Grid position (`x`, `y`, `z`) of the block within its section. |
+
+## Sides
+
+Each face of the block is exposed as a direct property and also via `getSide`.
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `upSide` | `Side` | ✅ | The upward-facing side. |
+| `downSide` | `Side` | ✅ | The downward-facing side. |
+| `leftSide` | `Side` | ✅ | The left-facing side. |
+| `rightSide` | `Side` | ✅ | The right-facing side. |
+| `frontSide` | `Side` | ✅ | The front-facing side. |
+| `backSide` | `Side` | ✅ | The back-facing side. |
+| `sides` | `Side[]` | ✅ | Array of all six sides. |
+
+## Neighbors
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `neighbors` | `Block[]` | ✅ | All touching blocks (sharing a full face). |
+| `adjacent` | `Block[]` | ✅ | All adjacent blocks (including diagonal adjacency). |
+| `upNeighbor` | `Block` | ✅ | Block directly above. |
+| `downNeighbor` | `Block` | ✅ | Block directly below. |
+| `leftNeighbor` | `Block` | ✅ | Block to the left. |
+| `rightNeighbor` | `Block` | ✅ | Block to the right. |
+| `frontNeighbor` | `Block` | ✅ | Block in front. |
+| `backNeighbor` | `Block` | ✅ | Block behind. |
+
+## State
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `section` | `string` | ✅ | ID of the level section that contains this block. |
+| `isVisited` | `boolean` | ✅ | `true` once the ball has rolled onto this block. |
+| `isMoving` | `boolean` | ✅ | `true` while the block is in motion (e.g. elevator). |
+| `movingSpeed` | `number` | ✅ | Speed of the block while it is moving. |
+| `movingDirection` | `Vector3` | ✅ | Normalised direction the block is moving toward. |
+| `isInMovingRest` | `boolean` | ✅ | `true` when a moving block has reached a rest waypoint. |
+| `intangible` | `boolean` | ❌ | Set to `true` to make the block passable; `false` to restore solidity. |
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the block. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this block. |
+
+## Methods
+
+### getSide
+
+```lua
+--- @param face Face
+--- @return Side
+function Block:getSide(face)
+```
+
+Returns the `Side` corresponding to the given `Face` enum value. Useful when the face is determined at runtime.
+
+### markAsVisited
+
+```lua
+function Block:markAsVisited()
+```
+
+Programmatically marks the block as visited without requiring the ball to roll over it.
+
+### enable / disable
+
+```lua
+function Block:enable()
+function Block:disable()
+```
+
+Enable or disable the block entirely. A disabled block is removed from play until re-enabled.
+
+### Type-cast helpers
+
+Call these to narrow a generic entity reference to a specific type. Each throws an error if the cast is invalid.
+
+```lua
+function Block:asLevel()      -- returns Level
+function Block:asBlock()      -- returns Block
+function Block:asSide()       -- returns Side
+function Block:asItem()       -- returns Item
+function Block:asEnemy()      -- returns Enemy
+function Block:asBall()       -- returns Ball
+function Block:asDecoration() -- returns Decoration
+```
+
+## BlockData
+
+`BlockData` is the raw, mutable representation of a block used when building or modifying level data (e.g. in `OnLevelLoad`). It holds the grid coordinates `x`, `y`, `z`, a `SideData` for each of the six faces (`up`, `down`, `left`, `right`, `front`, `back`), and the scripting fields `template`, `scriptRef`, `scriptTag`, `scriptVars`, and `properties`.
+
+Key `BlockData` methods:
+- `getSides()` — returns a table of all six `SideData` values in order: Up, Down, Left, Right, Front, Back.
+- `getSidesIterator()` — returns an iterator-compatible version of the same sequence.
+- `clear()` — resets the block data to empty defaults.
+
+## BlockSlot
+
+`BlockSlot` identifies a block's integer grid coordinate (`x`, `y`, `z`) within a section. You can obtain the world-space `Vector3` from `slot.position`. Use `BlockSlot.new(x, y, z)` to construct a slot, and `slot:translate(dx, dy, dz)` or `slot:translateFromBasis(basis, dx, dy, dz)` to compute offsets.
+
+## Usage Example
+
+The `OnBallRoll` hook fires each time the ball moves onto a new side. The example below disables a block when it has been visited three times by incrementing a counter stored in `localData`:
+
+```lua
+function OnBallRoll(self, ball)
+    -- self is a Block
+    local data = self.localData
+    local count = (data:get("rollCount") or 0) + 1
+    data:set("rollCount", count)
+
+    if count >= 3 then
+        self:disable()
+    end
+
+    -- Log the block's grid position
+    local slot = self.slot
+    Log.info("Ball rolled on block at " .. slot.x .. "," .. slot.y .. "," .. slot.z)
+end
+```

@@ -1,0 +1,57 @@
+---
+title: "LevelColor Enum Reference for RollingQuest Scripts"
+description: "Complete reference for the LevelColor enum, which identifies the twelve portal-side colors available in RollingQuest Lua scripts."
+sidebarTitle: "LevelColor"
+---
+
+The `LevelColor` enum identifies the twelve distinct colors used to label portal sides in a RollingQuest level. Each portal entrance or exit is associated with one of these colors, and you use the enum value to retrieve or configure that portal side via calls such as `Level.getPortalSide(color)`. Choosing the right color constant ensures your script targets the correct portal when multiple portals exist in the same level.
+
+## Values
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `LevelColor.Red` | `0` | Red portal side. |
+| `LevelColor.Blue` | `1` | Blue portal side. |
+| `LevelColor.Green` | `2` | Green portal side. |
+| `LevelColor.Yellow` | `3` | Yellow portal side. |
+| `LevelColor.Cyan` | `4` | Cyan portal side. |
+| `LevelColor.Orange` | `5` | Orange portal side. |
+| `LevelColor.Violet` | `6` | Violet portal side. |
+| `LevelColor.Magenta` | `7` | Magenta portal side. |
+| `LevelColor.Turquoise` | `8` | Turquoise portal side. |
+| `LevelColor.Lime` | `9` | Lime portal side. |
+| `LevelColor.Salmon` | `10` | Salmon portal side. |
+| `LevelColor.White` | `11` | White portal side. |
+
+## Usage Example
+
+The example below retrieves the red portal side and enables it, then retrieves the blue portal side and disables it based on a game condition:
+
+```lua
+-- Enable the red portal side at the start of the level
+local redPortal = Level.getPortalSide(LevelColor.Red)
+redPortal:setEnabled(true)
+
+-- Disable the blue portal side until the player collects all items
+local bluePortal = Level.getPortalSide(LevelColor.Blue)
+bluePortal:setEnabled(false)
+
+function onAllItemsCollected()
+    Level.getPortalSide(LevelColor.Blue):setEnabled(true)
+end
+```
+
+You can also iterate over several colors to reset all portals at once:
+
+```lua
+local colorsToReset = {
+    LevelColor.Red,
+    LevelColor.Green,
+    LevelColor.Yellow,
+    LevelColor.Cyan,
+}
+
+for _, color in ipairs(colorsToReset) do
+    Level.getPortalSide(color):setEnabled(false)
+end
+```

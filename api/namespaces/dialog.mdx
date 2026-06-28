@@ -1,0 +1,212 @@
+---
+title: "Dialog Namespace — RollingQuest Lua Scripting API"
+description: "Full reference for the Dialog namespace: display closeable, temporary, and manually controlled in-game messages with custom text and background colors."
+sidebarTitle: "Dialog"
+---
+
+The `Dialog` namespace lets you display overlay messages to the player during gameplay. There are three message types: **closeable** messages that the player dismisses with a button press, **temporary** messages that disappear automatically after a set duration, and **manual** messages that you control entirely from Lua — opening and closing them yourself at any time. Every function accepts an optional `Color` for the background panel; when omitted the background defaults to black.
+
+---
+
+## Color
+
+Many `Dialog` functions accept a `Color` parameter for the background. You can use any of the built-in named colors or construct a custom one.
+
+| Constant | Description |
+|---|---|
+| `Color.black` | Default background (no argument needed). |
+| `Color.red` | Red background. |
+| `Color.green` | Green background. |
+| `Color.blue` | Blue background. |
+| `Color.white` | White background. |
+| `Color.yellow` | Yellow background. |
+| `Color.cyan` | Cyan background. |
+| `Color.magenta` | Magenta background. |
+| `Color.gray` | Gray background. |
+
+To create a custom color, use `Color.new(r, g, b)` or `Color.new(r, g, b, a)` where each component is a `number` in the range `0.0`–`1.0`.
+
+---
+
+## Closeable Messages
+
+A closeable message stays on screen until the player explicitly dismisses it. Use it for important instructions that must be acknowledged.
+
+### `Dialog.createCloseable`
+
+Creates and immediately displays a new closeable message.
+
+```lua
+--- @param message string
+--- @return any
+function Dialog.createCloseable(message)
+
+--- @param message string
+--- @param backgroundColor Color
+--- @return any
+function Dialog.createCloseable(message, backgroundColor)
+```
+
+### `Dialog.openCloseable`
+
+Displays a closeable message whose content is stored in the level's message database under `messageId`.
+
+```lua
+--- @param messageId string
+--- @return any
+function Dialog.openCloseable(messageId)
+
+--- @param messageId string
+--- @param backgroundColor Color
+--- @return any
+function Dialog.openCloseable(messageId, backgroundColor)
+```
+
+---
+
+## Temporary Messages
+
+A temporary message disappears automatically after `duration` seconds. Use it for non-critical hints or status updates.
+
+### `Dialog.createTemporary`
+
+Creates and immediately displays a new temporary message.
+
+```lua
+--- @param message string
+--- @param duration number
+--- @return any
+function Dialog.createTemporary(message, duration)
+
+--- @param message string
+--- @param duration number
+--- @param backgroundColor Color
+--- @return any
+function Dialog.createTemporary(message, duration, backgroundColor)
+```
+
+### `Dialog.openTemporary`
+
+Displays a temporary message from the level message database.
+
+```lua
+--- @param messageId string
+--- @param duration number
+--- @return any
+function Dialog.openTemporary(messageId, duration)
+
+--- @param messageId string
+--- @param duration number
+--- @param backgroundColor Color
+--- @return any
+function Dialog.openTemporary(messageId, duration, backgroundColor)
+```
+
+---
+
+## Manual Messages
+
+A manual message persists until you explicitly close it with `Dialog.destroyManual`. You identify the dialog by a `dialogId` string that you choose. This gives you full programmatic control over when messages appear and disappear.
+
+### `Dialog.createManual`
+
+Creates a new manual dialog and immediately shows it.
+
+```lua
+--- @param dialogId string
+--- @param message string
+--- @return any
+function Dialog.createManual(dialogId, message)
+
+--- @param dialogId string
+--- @param message string
+--- @param backgroundColor Color
+--- @return any
+function Dialog.createManual(dialogId, message, backgroundColor)
+```
+
+### `Dialog.openManual`
+
+Shows a manual dialog using a pre-existing `dialogId` and a message from the level's message database.
+
+```lua
+--- @param dialogId string
+--- @param messageId string
+--- @return any
+function Dialog.openManual(dialogId, messageId)
+
+--- @param dialogId string
+--- @param messageId string
+--- @param backgroundColor Color
+--- @return any
+function Dialog.openManual(dialogId, messageId, backgroundColor)
+```
+
+### `Dialog.existsManual`
+
+Returns `true` if a manual dialog with the given `dialogId` is currently active.
+
+```lua
+--- @param dialogId string
+--- @return boolean
+function Dialog.existsManual(dialogId)
+```
+
+### `Dialog.destroyManual`
+
+Closes and removes the manual dialog with the given `dialogId`.
+
+```lua
+--- @param dialogId string
+--- @return any
+function Dialog.destroyManual(dialogId)
+```
+
+<Note>
+Calling `Dialog.destroyManual` on a `dialogId` that does not exist is a no-op; it will not raise an error.
+</Note>
+
+---
+
+## Usage Examples
+
+### Closeable welcome message
+
+```lua
+function OnStart()
+    Dialog.createCloseable(
+        "Welcome! Collect all keys to open the exit.",
+        Color.new(0.1, 0.0, 0.3)  -- dark purple background
+    )
+end
+```
+
+### Temporary status notification
+
+```lua
+function OnKeyCollected()
+    local remaining = Level.remainingKeys
+    Dialog.createTemporary(
+        remaining .. " key(s) remaining.",
+        2.5,
+        Color.blue
+    )
+end
+```
+
+### Manual countdown dialog
+
+```lua
+local COUNTDOWN_DIALOG = "countdown-msg"
+
+function OnStart()
+    Dialog.createManual(COUNTDOWN_DIALOG, "Boss fight begins in 5 seconds!", Color.red)
+
+    Level.delayAction(5.0, function()
+        if Dialog.existsManual(COUNTDOWN_DIALOG) then
+            Dialog.destroyManual(COUNTDOWN_DIALOG)
+        end
+        Signals.emitToAll("OnBossStart")
+    end)
+end
+```

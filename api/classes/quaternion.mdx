@@ -1,0 +1,264 @@
+---
+title: "Quaternion — 3D Rotation Math for RollingQuest Scripts"
+description: "Reference for the Quaternion class in RollingQuest Lua scripts. Covers x/y/z/w components, euler angles, slerp/lerp, angleAxis, lookRotation, and more rotation utilities."
+sidebarTitle: "Quaternion"
+---
+
+The `Quaternion` class represents a 3D rotation as four components — `x`, `y`, `z`, and `w`. Quaternions avoid the gimbal-lock problems of Euler angles and compose cleanly, making them the preferred way to describe rotations in RollingQuest scripts. You typically pair a `Quaternion` with a `Vector3` to build a full transform: the `Vector3` carries the position and the `Quaternion` carries the orientation. The most common constructors you'll reach for are `Quaternion.euler` (when you think in degrees), `Quaternion.angleAxis` (when you want to spin around a specific axis), and `Quaternion.lookRotation` (when you need something to face a direction).
+
+## Constructors
+
+```lua
+-- Identity rotation (no rotation at all)
+local rot = Quaternion.new()
+
+-- Explicit raw components (x, y, z, w)
+local raw = Quaternion.new(0, 0, 0, 1)
+
+-- From Euler angles in degrees — the most readable form
+local facing = Quaternion.euler(0, 90, 0)
+
+-- Rotate 45 degrees around the Y axis
+local spin = Quaternion.angleAxis(45, Vector3.up)
+
+-- Face toward a target direction
+local toward = Quaternion.lookRotation(Vector3.forward)
+```
+
+| Signature | Description |
+|---|---|
+| `Quaternion.new()` | Returns the identity quaternion `(0, 0, 0, 1)`. |
+| `Quaternion.new(x, y, z, w)` | Returns a quaternion with the given raw components. |
+| `Quaternion.euler(x, y, z)` | Builds a rotation from Euler angles (degrees) applied in Z→X→Y order. |
+| `Quaternion.euler(euler)` | Accepts a `Vector3` of Euler angles in degrees. |
+| `Quaternion.angleAxis(angle, axis)` | Rotates `angle` degrees around the given `axis` vector. |
+| `Quaternion.lookRotation(forward)` | Rotates so the local forward aligns with `forward`. |
+| `Quaternion.lookRotation(forward, upwards)` | Same, but also constrains the local up direction. |
+| `Quaternion.fromToRotation(fromDirection, toDirection)` | Returns the shortest rotation that maps one direction to another. |
+
+---
+
+## Instance Properties
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `x` | `number` | No | The X imaginary component. |
+| `y` | `number` | No | The Y imaginary component. |
+| `z` | `number` | No | The Z imaginary component. |
+| `w` | `number` | No | The real component. |
+| `eulerAngles` | `Vector3` | No | Get or set the rotation as Euler angles in degrees. |
+| `normalized` | `Quaternion` | Yes | A unit-length copy of the quaternion. |
+| `inverse` | `Quaternion` | Yes | The inverse (opposite) rotation. |
+
+You can also index a `Quaternion` by integer position (`q[1]` → x, `q[2]` → y, `q[3]` → z, `q[4]` → w) for read and write access.
+
+---
+
+## Static Constants
+
+| Constant | Description |
+|---|---|
+| `Quaternion.identity` | The identity rotation `(0, 0, 0, 1)` — represents no rotation. |
+
+---
+
+## Instance Methods
+
+### `copy`
+
+Returns a new `Quaternion` with the same component values.
+
+```lua
+--- @return Quaternion
+function Quaternion:copy()
+```
+
+### `set`
+
+Mutates the quaternion in place by assigning all four components.
+
+```lua
+--- @param x number
+--- @param y number
+--- @param z number
+--- @param w number
+function Quaternion:set(x, y, z, w)
+```
+
+### `normalize`
+
+Normalises the quaternion in place. To get a normalised copy without mutating the original, read the `normalized` property.
+
+```lua
+function Quaternion:normalize()
+```
+
+### `setLookRotation`
+
+Mutates the quaternion so the local forward faces `view`, optionally constraining the local up.
+
+```lua
+--- @param view Vector3
+function Quaternion:setLookRotation(view)
+
+--- @param view Vector3
+--- @param up Vector3
+function Quaternion:setLookRotation(view, up)
+```
+
+### `setFromToRotation`
+
+Mutates the quaternion to the shortest rotation from `fromDirection` to `toDirection`.
+
+```lua
+--- @param fromDirection Vector3
+--- @param toDirection Vector3
+function Quaternion:setFromToRotation(fromDirection, toDirection)
+```
+
+---
+
+## Static Methods
+
+### `slerp`
+
+Spherically interpolates between two rotations by the clamped factor `t`.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @param t number
+--- @return Quaternion
+function Quaternion.slerp(a, b, t)
+```
+
+### `slerpUnclamped`
+
+Same as `slerp` but `t` is not clamped to `[0, 1]`.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @param t number
+--- @return Quaternion
+function Quaternion.slerpUnclamped(a, b, t)
+```
+
+### `lerp`
+
+Linearly interpolates between two quaternions and normalises the result. Faster than `slerp` when the two rotations are close together.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @param t number
+--- @return Quaternion
+function Quaternion.lerp(a, b, t)
+```
+
+### `lerpUnclamped`
+
+Unclamped variant of `lerp`.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @param t number
+--- @return Quaternion
+function Quaternion.lerpUnclamped(a, b, t)
+```
+
+### `dot`
+
+Returns the dot product of two quaternions, which is useful for checking how similar two rotations are.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @return number
+function Quaternion.dot(a, b)
+```
+
+### `angle`
+
+Returns the angle in degrees between two rotations.
+
+```lua
+--- @param a Quaternion
+--- @param b Quaternion
+--- @return number
+function Quaternion.angle(a, b)
+```
+
+### `rotateTowards`
+
+Rotates `from` toward `to` by at most `maxDegreesDelta` degrees per call.
+
+```lua
+--- @param from Quaternion
+--- @param to Quaternion
+--- @param maxDegreesDelta number
+--- @return Quaternion
+function Quaternion.rotateTowards(from, to, maxDegreesDelta)
+```
+
+---
+
+## Usage Examples
+
+### Rotating a projectile direction
+
+When you fire a projectile you often want it to travel in the direction the character is facing, possibly with an upward arc. Use `Quaternion.euler` to build the offset, then multiply it by a `Vector3` representing the base forward direction.
+
+```lua
+-- The character faces along the Z axis
+local baseForward = Vector3.forward
+
+-- Add a 15-degree upward pitch to the shot
+local launchRotation = Quaternion.euler(-15, 0, 0)
+
+-- Apply the rotation to produce the launch direction
+-- Quaternion * Vector3 is supported via the * operator
+local launchDir = launchRotation * baseForward
+
+-- Spawn the projectile and set its velocity
+local proj = spawnProjectile()
+proj.transform.rotation = launchRotation
+proj.rigidbody.velocity  = Vector3.new(
+    launchDir.x * 20,
+    launchDir.y * 20,
+    launchDir.z * 20
+)
+```
+
+### Smoothly turning to face the player
+
+```lua
+function OnUpdate(delta)
+    local toPlayer = player.transform.position - self.transform.position
+    local targetRot = Quaternion.lookRotation(toPlayer)
+    self.transform.rotation = Quaternion.rotateTowards(
+        self.transform.rotation,
+        targetRot,
+        90 * delta   -- 90 degrees per second
+    )
+end
+```
+
+### Reading and writing Euler angles
+
+```lua
+-- Tilt the object 30 degrees on X
+local rot = self.transform.rotation
+local angles = rot.eulerAngles
+angles.x = 30
+rot.eulerAngles = angles
+self.transform.rotation = rot
+
+-- Or build it directly from Euler angles
+self.transform.rotation = Quaternion.euler(30, 0, 0)
+```
+
+<Note>
+`Vector3` and `Quaternion` are used together for transforms throughout RollingQuest. A `Quaternion` stores the orientation while a `Vector3` stores the position. The `*` operator can apply a `Quaternion` rotation to a `Vector3` direction.
+</Note>

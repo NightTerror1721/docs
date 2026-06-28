@@ -1,0 +1,217 @@
+---
+title: "Additional Enums Reference for RollingQuest Scripts"
+description: "Reference for eight supplementary RollingQuest enums: BallJumpMode, CameraLookPosition, CampaignResourceType, EnemyInteraction, EntityMoveType, Orientation, PoolMode, and ThemeMode."
+sidebarTitle: "Other Enums"
+---
+
+RollingQuest scripts expose several additional enums beyond the core entity and direction types. This page documents eight of them — covering how the ball jumps, where the camera looks, what resource formats a campaign uses, how enemies interact with the world, how entities move, compass-point orientations, water-pool behavior, and level theme variants. Each section lists all values in a table and provides context for when you use the enum in your scripts.
+
+---
+
+## BallJumpMode
+
+The `BallJumpMode` enum controls how the ball handles jumping. You set this mode on the ball or a surface to allow normal jumps, force continuous bouncing, or disable jumping entirely.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `BallJumpMode.Banned` | `0` | Jumping is completely disabled; the ball cannot leave the surface by jumping. |
+| `BallJumpMode.Normal` | `1` | Standard jumping behavior — the ball jumps once per input. |
+| `BallJumpMode.Bouncing` | `2` | The ball bounces continuously without requiring player input. |
+
+```lua
+-- Disable jumping on this surface block
+block:setBallJumpMode(BallJumpMode.Banned)
+
+-- Restore normal jumping when the player reaches a checkpoint
+function onCheckpointReached()
+    Ball.setJumpMode(BallJumpMode.Normal)
+end
+```
+
+---
+
+## CameraLookPosition
+
+The `CameraLookPosition` enum adjusts the vertical tilt of the camera, letting you direct the player's view upward, downward, or back to center. You pass it to camera control functions to shift focus without moving the camera's world position.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `CameraLookPosition.Center` | `0` | Camera looks straight ahead at the default horizon level. |
+| `CameraLookPosition.Up` | `1` | Camera tilts upward to reveal overhead scenery or obstacles. |
+| `CameraLookPosition.Down` | `-1` | Camera tilts downward to show the surface below the ball. |
+
+```lua
+-- Tilt the camera up when approaching a tall structure
+function onEnterTowerZone()
+    Camera.setLookPosition(CameraLookPosition.Up)
+end
+
+-- Return to center when leaving the zone
+function onExitTowerZone()
+    Camera.setLookPosition(CameraLookPosition.Center)
+end
+```
+
+---
+
+## CampaignResourceType
+
+The `CampaignResourceType` enum classifies the format of a resource file bundled with a campaign. You use it when loading or querying campaign assets so the engine knows how to parse and handle the data.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `CampaignResourceType.Unknown` | `0` | The resource format is unrecognized or unspecified. |
+| `CampaignResourceType.Binary` | `1` | Raw binary data (e.g., compiled assets or custom data blobs). |
+| `CampaignResourceType.Text` | `2` | Plain text data (e.g., dialogue files or configuration). |
+| `CampaignResourceType.Json` | `3` | JSON-formatted structured data. |
+| `CampaignResourceType.Image` | `4` | An image file (e.g., a texture or UI graphic). |
+
+```lua
+-- Load a JSON config file bundled with the campaign
+local config = Campaign.loadResource("settings.json", CampaignResourceType.Json)
+
+-- Load a plain-text dialogue file
+local dialogue = Campaign.loadResource("intro.txt", CampaignResourceType.Text)
+```
+
+---
+
+## EnemyInteraction
+
+The `EnemyInteraction` enum identifies which types of level hazards and mechanics an enemy is capable of interacting with. You use it to query or configure how a specific enemy responds to environmental elements like spikes, lasers, ice, and magnets.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `EnemyInteraction.Spikes` | `0` | Enemy can interact with spike hazards. |
+| `EnemyInteraction.Lasers` | `1` | Enemy can interact with laser beams. |
+| `EnemyInteraction.Teleports` | `2` | Enemy can use or be affected by teleporters. |
+| `EnemyInteraction.Buttons` | `3` | Enemy can activate buttons. |
+| `EnemyInteraction.LightSensors` | `4` | Enemy can trigger light sensors. |
+| `EnemyInteraction.DirectionRestrictions` | `5` | Enemy is affected by directional restriction blocks. |
+| `EnemyInteraction.Ice` | `6` | Enemy slides or behaves differently on ice surfaces. |
+| `EnemyInteraction.Fire` | `7` | Enemy interacts with fire hazards. |
+| `EnemyInteraction.BreakingBlocks` | `8` | Enemy can walk on or destroy breaking blocks. |
+| `EnemyInteraction.TrampsAndVents` | `9` | Enemy is affected by trampolines and vents. |
+| `EnemyInteraction.Magnets` | `10` | Enemy is attracted or repelled by magnetic blocks. |
+| `EnemyInteraction.Rotators` | `11` | Enemy is affected by rotator elements. |
+| `EnemyInteraction.BallShield` | `12` | Enemy interacts with the ball shield mechanic. |
+| `EnemyInteraction.InvisibleBlocks` | `13` | Enemy can detect or collide with invisible blocks. |
+
+```lua
+-- Check if an enemy can interact with ice before enabling an ice puzzle
+function onIcePuzzleActivate(enemy)
+    if enemy:hasInteraction(EnemyInteraction.Ice) then
+        enemy:setPathSlippery(true)
+    end
+end
+```
+
+---
+
+## EntityMoveType
+
+The `EntityMoveType` enum describes the kind of movement an entity is currently performing. You read this value from movement callbacks or query it on an entity to determine how to respond — for example, playing a specific animation or sound only when the entity is genuinely airborne versus rolling forward.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `EntityMoveType.None` | `0` | The entity is not moving. |
+| `EntityMoveType.Ahead` | `1` | The entity is moving forward horizontally. |
+| `EntityMoveType.Up` | `2` | The entity is moving upward. |
+| `EntityMoveType.Down` | `3` | The entity is moving downward. |
+| `EntityMoveType.RotateLeft` | `4` | The entity is rotating to the left. |
+| `EntityMoveType.RotateRight` | `5` | The entity is rotating to the right. |
+| `EntityMoveType.JumpUp` | `6` | The entity is jumping upward. |
+| `EntityMoveType.JumpAhead` | `7` | The entity is jumping forward. |
+| `EntityMoveType.Falling` | `8` | The entity is in free fall. |
+| `EntityMoveType.SideDown` | `9` | The entity is moving diagonally downward along a side. |
+
+```lua
+-- Play a special sound when the ball jumps forward
+function onBallMove(moveType)
+    if moveType == EntityMoveType.JumpAhead then
+        Audio.play("jump_forward")
+    elseif moveType == EntityMoveType.Falling then
+        Audio.play("falling_wind")
+    end
+end
+```
+
+---
+
+## Orientation
+
+The `Orientation` enum represents the four compass-point directions on the horizontal plane. You use it to set or read the facing direction of entities and level elements that are aligned to a cardinal axis — such as an enemy's initial heading or the direction a one-way gate allows passage through.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `Orientation.North` | `0` | Facing north (positive Z axis by convention). |
+| `Orientation.East` | `1` | Facing east (positive X axis by convention). |
+| `Orientation.South` | `2` | Facing south (negative Z axis by convention). |
+| `Orientation.West` | `3` | Facing west (negative X axis by convention). |
+
+```lua
+-- Spawn an enemy facing east
+enemy:setOrientation(Orientation.East)
+
+-- Redirect an enemy to face south when it hits a wall
+function onEnemyHitWall(enemy)
+    if enemy:getOrientation() == Orientation.North then
+        enemy:setOrientation(Orientation.South)
+    end
+end
+```
+
+---
+
+## PoolMode
+
+The `PoolMode` enum controls the behavior of a liquid pool in the level. You apply it to a pool entity to choose whether the water level is fixed, dynamically adjusted by the engine, or animated as a rising-and-falling tide.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `PoolMode.Disabled` | `0` | The pool is inactive; no liquid is rendered or simulated. |
+| `PoolMode.Static` | `1` | The liquid level is fixed at a set height and does not change. |
+| `PoolMode.AutoAdjust` | `2` | The engine automatically adjusts the liquid level based on gameplay events. |
+| `PoolMode.Tide` | `3` | The liquid level rises and falls in a periodic tide pattern. |
+
+```lua
+-- Start the level with the pool disabled, then enable it as a rising tide
+function onLevelStart()
+    pool:setMode(PoolMode.Disabled)
+end
+
+function onTriggerActivated()
+    pool:setMode(PoolMode.Tide)
+end
+```
+
+---
+
+## ThemeMode
+
+The `ThemeMode` enum selects the visual theme variant applied to a level. Normal and secret variants exist for the base theme as well as three additional variant sets, letting you create alternate visual presentations of the same level geometry — for example, a secret hidden version with a different atmosphere.
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `ThemeMode.Normal` | `0` | The standard default theme for the level. |
+| `ThemeMode.Secret` | `1` | The secret variant of the default theme. |
+| `ThemeMode.KulaWorld` | `2` | The KulaWorld-inspired theme variant. |
+| `ThemeMode.KulaWorldSecret` | `3` | The secret version of the KulaWorld theme. |
+| `ThemeMode.Variant1` | `4` | The first alternate theme variant. |
+| `ThemeMode.Variant1Secret` | `5` | The secret version of Variant 1. |
+| `ThemeMode.Variant2` | `6` | The second alternate theme variant. |
+| `ThemeMode.Variant2Secret` | `7` | The secret version of Variant 2. |
+| `ThemeMode.Variant3` | `8` | The third alternate theme variant. |
+| `ThemeMode.Variant3Secret` | `9` | The secret version of Variant 3. |
+
+```lua
+-- Apply the secret theme when the player discovers a hidden area
+function onSecretAreaEntered()
+    Level.setThemeMode(ThemeMode.Secret)
+end
+
+-- Switch to the KulaWorld theme for a special challenge section
+function onChallengeStart()
+    Level.setThemeMode(ThemeMode.KulaWorld)
+end
+```

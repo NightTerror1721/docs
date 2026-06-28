@@ -1,0 +1,199 @@
+---
+title: "Flyby Namespace — RollingQuest Lua Scripting API"
+description: "Reference for the Flyby namespace: trigger cinematic camera sequences and zoom shots using FlybyEvent chains and startZoomAt overloads in your scripts."
+sidebarTitle: "Flyby"
+---
+
+The `Flyby` namespace lets you take control of the camera to create cinematic sequences. You can build a multi-step flyby by composing a list of `FlybyEvent` objects and passing them to `Flyby.start()`, or trigger a quick zoom-in on a specific block with `Flyby.startZoomAt()`. The camera moves smoothly between positions and returns to the player when the sequence ends.
+
+---
+
+## Functions
+
+### `Flyby.start`
+
+Starts a flyby sequence made up of one or more `FlybyEvent` steps. The camera moves through each event in order.
+
+```lua
+--- @param events FlybyEvent[]
+--- @return any
+function Flyby.start(events)
+```
+
+Pass an array (Lua table) of `FlybyEvent` objects. You create each event using the static factory methods on the `FlybyEvent` class described below.
+
+---
+
+### `Flyby.startZoomAt`
+
+Starts a quick zoom-in, hold, and return sequence focused on a specific location. You can identify the target by a `BlockSlot` object or by raw `x, y, z` coordinates.
+
+```lua
+--- @param slot BlockSlot
+--- @param face Face
+--- @param orientation Orientation
+--- @param look CameraLookPosition
+--- @param goingDuration number
+--- @param waitDuration number
+--- @param returnDuration number
+--- @return any
+function Flyby.startZoomAt(slot, face, orientation, look, goingDuration, waitDuration, returnDuration)
+```
+
+```lua
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @param face Face
+--- @param orientation Orientation
+--- @param look CameraLookPosition
+--- @param goingDuration number
+--- @param waitDuration number
+--- @param returnDuration number
+--- @return any
+function Flyby.startZoomAt(x, y, z, face, orientation, look, goingDuration, waitDuration, returnDuration)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `slot` / `x, y, z` | `BlockSlot` / `integer` | Target block, by slot or grid coordinates. |
+| `face` | `Face` | Which face of the block the camera looks toward. |
+| `orientation` | `Orientation` | Camera roll orientation at the target. |
+| `look` | `CameraLookPosition` | How the camera looks at the target position. |
+| `goingDuration` | `number` | Seconds to travel from player to target. |
+| `waitDuration` | `number` | Seconds to hold at the target. |
+| `returnDuration` | `number` | Seconds to travel back to the player. |
+
+---
+
+## FlybyEvent Class
+
+A `FlybyEvent` represents one step in a flyby sequence. You never construct events with `FlybyEvent.new`; instead you use the static factory methods below. All factory methods return a `FlybyEvent` that you add to the array passed to `Flyby.start()`.
+
+### Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `event.type` | `integer` | Numeric type identifier of the event. |
+| `event.isFinished` | `boolean` | `true` once this event has played through. |
+
+### Factory Methods
+
+#### `FlybyEvent.rawMoveTo`
+
+Moves the camera to an exact world position and rotation.
+
+```lua
+--- @param position Vector3
+--- @param rotation Quaternion
+--- @param look CameraLookPosition
+--- @param duration number
+--- @return FlybyEvent
+function FlybyEvent.rawMoveTo(position, rotation, look, duration)
+```
+
+#### `FlybyEvent.moveTo`
+
+Moves the camera to a block face, identified either by a `BlockSlot` or by grid coordinates.
+
+```lua
+--- @param slot BlockSlot
+--- @param face Face
+--- @param orientation Orientation
+--- @param look CameraLookPosition
+--- @param duration number
+--- @return FlybyEvent
+function FlybyEvent.moveTo(slot, face, orientation, look, duration)
+```
+
+```lua
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @param face Face
+--- @param orientation Orientation
+--- @param look CameraLookPosition
+--- @param duration number
+--- @return FlybyEvent
+function FlybyEvent.moveTo(x, y, z, face, orientation, look, duration)
+```
+
+#### `FlybyEvent.moveToBall`
+
+Moves the camera to follow the ball at the given look position.
+
+```lua
+--- @param look CameraLookPosition
+--- @param duration number
+--- @return FlybyEvent
+function FlybyEvent.moveToBall(look, duration)
+```
+
+#### `FlybyEvent.wait`
+
+Holds the camera in place for the specified duration.
+
+```lua
+--- @param duration number
+--- @return FlybyEvent
+function FlybyEvent.wait(duration)
+```
+
+#### `FlybyEvent.message`
+
+Displays an overlay message during the flyby, with an optional background color.
+
+```lua
+--- @param message string
+--- @return FlybyEvent
+function FlybyEvent.message(message)
+
+--- @param message string
+--- @param backgroundColor Color
+--- @return FlybyEvent
+function FlybyEvent.message(message, backgroundColor)
+```
+
+#### `FlybyEvent.script`
+
+Runs a Lua closure at this point in the sequence. Use it to trigger sounds, signals, or any side effect.
+
+```lua
+--- @param closure function
+--- @return FlybyEvent
+function FlybyEvent.script(closure)
+```
+
+---
+
+## Usage Examples
+
+### Quick zoom-in on a block
+
+```lua
+function OnStart()
+    -- Zoom to the block at (3, 0, 5) for a dramatic intro
+    Flyby.startZoomAt(3, 0, 5, Face.Top, Orientation.North, CameraLookPosition.Center, 1.5, 2.0, 1.0)
+end
+```
+
+### Multi-step cinematic sequence
+
+```lua
+function OnStart()
+    Flyby.start({
+        -- Show a title card while the camera pans to the exit
+        FlybyEvent.message("Reach the exit before time runs out!", Color.new(0, 0, 0, 0.8)),
+        FlybyEvent.moveTo(10, 0, 8, Face.Top, Orientation.North, CameraLookPosition.Center, 2.0),
+        FlybyEvent.wait(1.5),
+
+        -- Run a script mid-sequence to open the starting gate
+        FlybyEvent.script(function()
+            Signals.emitToTag("OnOpen", "start-gate")
+        end),
+
+        -- Return to the ball
+        FlybyEvent.moveToBall(CameraLookPosition.Center, 1.5),
+    })
+end
+```

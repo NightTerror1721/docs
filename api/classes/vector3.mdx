@@ -1,0 +1,389 @@
+---
+title: "Vector3 — 3D Vector Math for RollingQuest Scripts"
+description: "Reference for the Vector3 class used in RollingQuest Lua scripts. Covers constructors, x/y/z properties, static constants, and all math methods like lerp, cross, dot, and distance."
+sidebarTitle: "Vector3"
+---
+
+The `Vector3` class represents a point or direction in 3D space with three floating-point components: `x`, `y`, and `z`. You use it everywhere positions, velocities, and directions are needed — passing it to transform properties, computing distances between objects, or blending between two locations with `lerp`. A companion class, `Basis`, builds on `Vector3` to describe the full orientation of a face in the game world; a brief reference for `Basis` appears at the end of this page.
+
+## Constructors
+
+```lua
+-- Create a vector with explicit components
+local pos = Vector3.new(1.0, 2.5, -3.0)
+
+-- Create a zero vector (x=0, y=0, z=0)
+local origin = Vector3.new()
+```
+
+| Signature | Description |
+|---|---|
+| `Vector3.new(x, y, z)` | Returns a new `Vector3` with the given components. |
+| `Vector3.new()` | Returns a new `Vector3` initialised to `(0, 0, 0)`. |
+
+---
+
+## Instance Properties
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `x` | `number` | No | The X component. |
+| `y` | `number` | No | The Y component. |
+| `z` | `number` | No | The Z component. |
+| `magnitude` | `number` | Yes | The length of the vector. |
+| `sqrMagnitude` | `number` | Yes | The squared length (cheaper than `magnitude` when exact length is not needed). |
+| `normalized` | `Vector3` | Yes | A unit-length copy of the vector. Does not mutate the original. |
+
+You can also index a `Vector3` by integer position (`v[1]` → x, `v[2]` → y, `v[3]` → z) for read and write access.
+
+---
+
+## Static Constants
+
+These read-only class-level vectors cover the most common directions and sentinel values.
+
+| Constant | Value |
+|---|---|
+| `Vector3.zero` | `(0, 0, 0)` |
+| `Vector3.one` | `(1, 1, 1)` |
+| `Vector3.forward` | `(0, 0, 1)` |
+| `Vector3.back` | `(0, 0, -1)` |
+| `Vector3.up` | `(0, 1, 0)` |
+| `Vector3.down` | `(0, -1, 0)` |
+| `Vector3.left` | `(-1, 0, 0)` |
+| `Vector3.right` | `(1, 0, 0)` |
+| `Vector3.positiveInfinity` | `(∞, ∞, ∞)` |
+| `Vector3.negativeInfinity` | `(-∞, -∞, -∞)` |
+
+---
+
+## Instance Methods
+
+### `copy`
+
+Returns a new `Vector3` with the same component values as the original.
+
+```lua
+--- @return Vector3
+function Vector3:copy()
+```
+
+### `set`
+
+Mutates the vector in place, assigning new values to all three components.
+
+```lua
+--- @param x number
+--- @param y number
+--- @param z number
+function Vector3:set(x, y, z)
+```
+
+### `normalize`
+
+Normalises the vector in place so that its `magnitude` becomes `1`. To get a normalised copy without modifying the original, read the `normalized` property instead.
+
+```lua
+function Vector3:normalize()
+```
+
+---
+
+## Static Methods
+
+### `dot`
+
+Returns the dot product of two vectors — useful for checking alignment between directions.
+
+```lua
+--- @param lhs Vector3
+--- @param rhs Vector3
+--- @return number
+function Vector3.dot(lhs, rhs)
+```
+
+### `cross`
+
+Returns a vector perpendicular to both inputs.
+
+```lua
+--- @param lhs Vector3
+--- @param rhs Vector3
+--- @return Vector3
+function Vector3.cross(lhs, rhs)
+```
+
+### `distance`
+
+Returns the Euclidean distance between two points.
+
+```lua
+--- @param a Vector3
+--- @param b Vector3
+--- @return number
+function Vector3.distance(a, b)
+```
+
+### `lerp`
+
+Linearly interpolates between `a` and `b` by the clamped factor `t` (0 → `a`, 1 → `b`).
+
+```lua
+--- @param a Vector3
+--- @param b Vector3
+--- @param t number
+--- @return Vector3
+function Vector3.lerp(a, b, t)
+```
+
+### `lerpUnclamped`
+
+Same as `lerp` but `t` is not clamped, so values outside `[0, 1]` extrapolate beyond the endpoints.
+
+```lua
+--- @param a Vector3
+--- @param b Vector3
+--- @param t number
+--- @return Vector3
+function Vector3.lerpUnclamped(a, b, t)
+```
+
+### `slerp`
+
+Spherically interpolates between two direction vectors, preserving arc length.
+
+```lua
+--- @param a Vector3
+--- @param b Vector3
+--- @param t number
+--- @return Vector3
+function Vector3.slerp(a, b, t)
+```
+
+### `slerpUnclamped`
+
+Unclamped variant of `slerp`.
+
+```lua
+--- @param a Vector3
+--- @param b Vector3
+--- @param t number
+--- @return Vector3
+function Vector3.slerpUnclamped(a, b, t)
+```
+
+### `scale`
+
+Returns a component-wise product of two vectors (i.e. `(a.x*b.x, a.y*b.y, a.z*b.z)`). Also available as an instance method that scales the vector in place using a single `Vector3` argument.
+
+```lua
+--- Static form
+--- @param a Vector3
+--- @param b Vector3
+--- @return Vector3
+function Vector3.scale(a, b)
+```
+
+### `moveTowards`
+
+Moves `current` toward `target` by at most `maxDistanceDelta` units.
+
+```lua
+--- @param current Vector3
+--- @param target Vector3
+--- @param maxDistanceDelta number
+--- @return Vector3
+function Vector3.moveTowards(current, target, maxDistanceDelta)
+```
+
+### `rotateTowards`
+
+Rotates `current` toward `target` by at most `maxRadiansDelta` radians, also clamping the magnitude change.
+
+```lua
+--- @param current Vector3
+--- @param target Vector3
+--- @param maxRadiansDelta number
+--- @param maxMagnitudeDelta number
+--- @return Vector3
+function Vector3.rotateTowards(current, target, maxRadiansDelta, maxMagnitudeDelta)
+```
+
+### `smoothDamp`
+
+Gradually moves `current` toward `target` in a spring-damper fashion. `currentVelocity` is updated each frame. `maxSpeed` and `deltaTime` are optional.
+
+```lua
+--- @param current Vector3
+--- @param target Vector3
+--- @param currentVelocity Vector3
+--- @param smoothTime number
+--- @param maxSpeed number   -- optional
+--- @param deltaTime number  -- optional
+--- @return Vector3
+function Vector3.smoothDamp(current, target, currentVelocity, smoothTime, maxSpeed, deltaTime)
+```
+
+### `reflect`
+
+Reflects `inDirection` off a surface with the given `inNormal`.
+
+```lua
+--- @param inDirection Vector3
+--- @param inNormal Vector3
+--- @return Vector3
+function Vector3.reflect(inDirection, inNormal)
+```
+
+### `project`
+
+Projects `vector` onto the direction `onNormal`.
+
+```lua
+--- @param vector Vector3
+--- @param onNormal Vector3
+--- @return Vector3
+function Vector3.project(vector, onNormal)
+```
+
+### `projectOnPlane`
+
+Removes the component of `vector` that is parallel to `planeNormal`, returning the flat component.
+
+```lua
+--- @param vector Vector3
+--- @param planeNormal Vector3
+--- @return Vector3
+function Vector3.projectOnPlane(vector, planeNormal)
+```
+
+### `angle`
+
+Returns the unsigned angle in degrees between `from` and `to`.
+
+```lua
+--- @param from Vector3
+--- @param to Vector3
+--- @return number
+function Vector3.angle(from, to)
+```
+
+### `signedAngle`
+
+Returns the signed angle in degrees from `from` to `to`, measured around `axis`.
+
+```lua
+--- @param from Vector3
+--- @param to Vector3
+--- @param axis Vector3
+--- @return number
+function Vector3.signedAngle(from, to, axis)
+```
+
+### `clampMagnitude`
+
+Returns a copy of `vector` whose length is clamped to `maxLength`.
+
+```lua
+--- @param vector Vector3
+--- @param maxLength number
+--- @return Vector3
+function Vector3.clampMagnitude(vector, maxLength)
+```
+
+### `min` / `max`
+
+Return component-wise minimum or maximum of two vectors.
+
+```lua
+--- @param lhs Vector3
+--- @param rhs Vector3
+--- @return Vector3
+function Vector3.min(lhs, rhs)
+function Vector3.max(lhs, rhs)
+```
+
+### `orthoNormalize`
+
+Orthonormalises the `normal` and `tangent` vectors (and optionally `binormal`) in place using Gram-Schmidt.
+
+```lua
+--- @param normal Vector3
+--- @param tangent Vector3
+function Vector3.orthoNormalize(normal, tangent)
+
+--- @param normal Vector3
+--- @param tangent Vector3
+--- @param binormal Vector3
+function Vector3.orthoNormalize(normal, tangent, binormal)
+```
+
+---
+
+## Usage Examples
+
+### Setting a world position
+
+```lua
+-- Place an object 5 units above the origin
+local spawnPos = Vector3.new(0, 5, 0)
+self.transform.position = spawnPos
+```
+
+### Calculating distance between two objects
+
+```lua
+local playerPos = player.transform.position
+local enemyPos  = enemy.transform.position
+local dist = Vector3.distance(playerPos, enemyPos)
+
+if dist < 3.0 then
+    print("Enemy is within attack range!")
+end
+```
+
+### Smoothly moving toward a target
+
+```lua
+local velocity = Vector3.new()   -- persisted across frames
+
+function OnUpdate(delta)
+    local current = self.transform.position
+    local target  = Vector3.new(10, 0, 10)
+    self.transform.position = Vector3.smoothDamp(
+        current, target, velocity, 0.3
+    )
+end
+```
+
+---
+
+## The Basis Class
+
+`Basis` describes the orientation of a tile face in 3D space. You will typically receive a `Basis` from the engine rather than constructing one yourself.
+
+**Constructors**
+
+```lua
+Basis.new()                        -- default face and orientation
+Basis.new(face)                    -- specified face, default orientation
+Basis.new(face, orientation)       -- fully specified
+```
+
+**Read-only properties**
+
+| Property | Type | Description |
+|---|---|---|
+| `face` | `Face` | The face enum value. |
+| `faceName` | `string` | The name of the face. |
+| `orientation` | `Orientation` | The orientation enum value. |
+| `orientationName` | `string` | The name of the orientation. |
+| `front`, `back`, `right`, `left`, `up`, `down` | `Vector3` | Direction vectors relative to the basis. |
+| `turnUp`, `turnDown`, `turnLeft`, `turnRight`, `turnBack` | `Basis` | Adjacent bases reached by turning in that direction. |
+
+**Methods**
+
+```lua
+basis:withFace(face)               -- returns a new Basis with a different face
+basis:withOrientation(orientation) -- returns a new Basis with a different orientation
+```

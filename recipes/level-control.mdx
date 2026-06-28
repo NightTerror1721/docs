@@ -1,0 +1,289 @@
+---
+title: "How to Control Level State from Scripts"
+description: "Win, lose, or restart the level, manage lives and score, manipulate the hourglass timer, and trigger checkpoints from your Lua scripts."
+sidebarTitle: "Level Control"
+---
+
+The `Level` namespace is the central hub for changing what happens in a running level. You can end the level in any outcome, adjust the player's lives and score, stretch or shrink the time on the hourglass, flip the lights off, freeze the ball with a sleeping pill effect, and save progress to a checkpoint — all from a Lua script.
+
+---
+
+## Winning, Losing, and Restarting
+
+Three functions control the top-level outcome of a level at any point during play.
+
+```lua
+-- Complete the level normally (advances to the next level in the campaign)
+function Level.completeLevel(): any
+
+-- Complete and jump to a named level instead of the default next one
+function Level.completeLevel(nextLevel: string): any
+
+-- Lose the level with a standard cause (uses LostLevelCause enum)
+function Level.loseLevel(cause: LostLevelCause): any
+
+-- Lose the level with a custom message (icon taken from LostLevelCause)
+function Level.loseLevel(cause: string, causeIcon: LostLevelCause): any
+
+-- Lose the level with a fully custom message, no icon
+function Level.loseLevel(cause: string): any
+
+-- Restart the level from the beginning
+function Level.restartLevel(): any
+```
+
+### The `LostLevelCause` Enum
+
+Pass one of these values to `Level.loseLevel` (or `Ball:kill` / `Ball:instaKill`) to set the death icon shown on screen.
+
+| Name | Value | Meaning |
+|------|-------|---------|
+| `LostLevelCause.FellOff` | `0` | Fell off the level |
+| `LostLevelCause.TimeOut` | `1` | Ran out of time |
+| `LostLevelCause.Spiked` | `2` | Impaled on spikes |
+| `LostLevelCause.Burned` | `3` | Burned by fire/lava |
+| `LostLevelCause.Captured` | `4` | Caught by an enemy |
+| `LostLevelCause.InsideBlock` | `5` | Crushed inside a block |
+| `LostLevelCause.Lasered` | `6` | Hit by a laser |
+| `LostLevelCause.Poisoned` | `7` | Poisoned |
+| `LostLevelCause.InfiniteJumpLoop` | `8` | Stuck in a jump loop |
+| `LostLevelCause.Telefragged` | `9` | Teleport collision |
+| `LostLevelCause.LostBalls` | `10` | All balls lost |
+| `LostLevelCause.Electrocuted` | `11` | Electrocuted |
+
+```lua
+-- Kill the ball immediately with the "Burned" icon
+Level.loseLevel(LostLevelCause.Burned)
+
+-- Lose with a custom flavour-text message, borrowing the "Captured" icon
+Level.loseLevel("The guardian caught you!", LostLevelCause.Captured)
+```
+
+---
+
+## Lives
+
+Read and modify the player's life count at runtime.
+
+```lua
+-- Read-only properties
+Level.currentLives    -- integer: current life count
+Level.hasInfiniteLives -- boolean (read/write): toggle infinite lives
+
+-- Functions
+function Level.giveLives(amount: integer): any
+function Level.loseLives(amount: integer): any
+```
+
+```lua
+-- Grant a bonus life when the player finds a secret area
+function OnBallRoll(self, rollIn, side, ball)
+    if rollIn and self.tag == "secret_bonus" then
+        Level.giveLives(1)
+        Dialog.createTemporary("Secret found! +1 Life", 3.0, Color.new(0.1, 0.6, 0.1))
+    end
+end
+```
+
+<Note>
+  `Level.hasInfiniteLives` is writable — set it to `true` to give the player infinite lives for the duration of a scripted sequence (for example, a puzzle section where dying should not be permanent).
+</Note>
+
+---
+
+## Score
+
+Award or inspect score values during play.
+
+```lua
+-- Read-only score properties
+Level.playerScore  -- integer: the player's cumulative campaign score
+Level.levelScore   -- integer: the score accumulated in this level only
+
+-- Function
+function Level.giveScore(score: integer): any
+```
+
+```lua
+-- Award a time bonus based on remaining hourglass time
+local function awardTimeBonus()
+    local bonus = math.floor(Level.remainingTime * 10)
+    if bonus > 0 then
+        Level.giveScore(bonus)
+        Dialog.createTemporary("Time Bonus: +" .. bonus, 3.0, Color.yellow)
+    end
+end
+```
+
+---
+
+## Hourglass Timer
+
+The hourglass counts down from a set amount; when it reaches zero it can cause the player to lose the level. You can manipulate it at any time.
+
+```lua
+-- Read-only / read-write properties
+Level.remainingTime      -- number: seconds left on the hourglass (read-only)
+Level.isHourglassEnabled -- boolean (read/write): enable or disable the hourglass
+Level.isHourglassBlocked -- boolean (read-only): is the hourglass currently frozen?
+Level.hourglassEndsCausesLoseLevel -- boolean (read-only)
+
+-- Functions
+function Level.increaseHourglassTime(amount: number): any
+function Level.decreaseHourglassTime(amount: number): any
+function Level.invertHourglass(): any
+```
+
+```lua
+-- Add 10 seconds as a reward for collecting a bonus item
+function OnCollect(self, ball)
+    if self.tag == "time_gem" then
+        Level.increaseHourglassTime(10.0)
+        Dialog.createTemporary("+10 seconds!", 2.5, Color.cyan)
+    end
+end
+```
+
+`Level.invertHourglass()` flips the hourglass state — if it was counting down it now counts up, and vice versa.
+
+---
+
+## Dark Mode
+
+Toggle dark mode to plunge the level into near-darkness, relying on the ball's own light source.
+
+```lua
+function Level.activateDarkMode(): any
+function Level.deactivateDarkMode(): any
+
+-- Read-only status
+Level.isDarkModeEnabled -- boolean
+```
+
+```lua
+-- Activate dark mode when the ball enters a specific zone block
+function OnBallRoll(self, rollIn, side, ball)
+    if self.tag == "dark_zone_entry" then
+        if rollIn then
+            Level.activateDarkMode()
+        else
+            Level.deactivateDarkMode()
+        end
+    end
+end
+```
+
+---
+
+## Checkpoints
+
+Save the current ball position and level state so the player respawns there instead of the start.
+
+```lua
+function Level.saveCheckpoint(): any
+function Level.saveCheckpoint(side: Side): any
+```
+
+```lua
+-- Save a checkpoint when the ball lands on a checkpoint block
+function OnBallRoll(self, rollIn, side, ball)
+    if rollIn and self.tag == "checkpoint" then
+        Level.saveCheckpoint()
+        Dialog.createTemporary("Checkpoint saved!", 2.0)
+    end
+end
+```
+
+---
+
+## Sleeping Pill Effect
+
+The sleeping pill effect temporarily slows or disables the ball's movement, useful for cut-scenes or scripted pauses.
+
+```lua
+function Level.activateSleepingPillEffect(seconds: number): any
+function Level.deactivateSleepingPillEffect(): any
+
+-- Read-only status
+Level.isSleepingPillEffectActive -- boolean
+```
+
+---
+
+## Delayed Actions
+
+`Level.delayAction` schedules a function to run after a fixed number of seconds. It is non-blocking — the level continues running while the timer counts down.
+
+```lua
+function Level.delayAction(delayTime: number, action: fun(): void): any
+```
+
+```lua
+-- Show a message then complete the level 2 seconds later
+Level.delayAction(2.0, function()
+    Level.completeLevel()
+end)
+```
+
+---
+
+## Complete Example — Guarded Exit with Score Bonus
+
+This script is attached to the **Level** entity. It waits for the player to reach the exit block (`OnBallRoll` on the exit side), checks that all keys are collected, awards a time-based score bonus, then completes the level.
+
+```lua
+-- Level script
+
+local exitTriggered = false
+
+function OnStart(self)
+    Dialog.createCloseable(
+        "Collect all " .. Level.keysCount .. " keys, then reach the exit!",
+        Color.new(0.1, 0.1, 0.4, 0.9)
+    )
+end
+
+function OnUpdate(self, deltaTime)
+    -- Warn the player if time is running low
+    if Level.isHourglassEnabled and Level.remainingTime <= 10.0 then
+        -- This would fire every frame; in a real script guard with a flag
+    end
+end
+
+-- Called from the exit block script via a shared tag check.
+-- Attach this to the EXIT BLOCK entity instead if you prefer.
+function onBallReachedExit(ball)
+    if exitTriggered then return end
+
+    if not Level.areAllKeysCollected then
+        local remaining = Level.remainingKeys
+        Dialog.createTemporary(
+            "You still need " .. remaining .. " key(s)!",
+            3.0,
+            Color.new(0.7, 0.2, 0.0)
+        )
+        return
+    end
+
+    exitTriggered = true
+
+    -- Award time bonus
+    local timeBonus = math.floor(Level.remainingTime * 10)
+    if timeBonus > 0 then
+        Level.giveScore(timeBonus)
+    end
+
+    -- Save a checkpoint at the exit (just in case level transitions need it)
+    Level.saveCheckpoint()
+
+    -- Brief celebration message, then complete
+    Dialog.createTemporary("All keys collected! Level complete!", 2.0, Color.green)
+    Level.delayAction(2.0, function()
+        Level.completeLevel()
+    end)
+end
+```
+
+<Tip>
+  Combine `Level.areAllKeysCollected` with the `OnBallRoll` hook on your exit block to build a gated exit without any engine-level exit block settings — pure script control.
+</Tip>

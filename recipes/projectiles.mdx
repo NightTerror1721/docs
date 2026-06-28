@@ -1,0 +1,269 @@
+---
+title: "How to Create and Fire Projectiles"
+description: "Create, configure, and fire projectiles from Lua scripts using Level.createProjectile, ProjectileRequest, and per-projectile callbacks."
+sidebarTitle: "Projectiles"
+---
+
+Projectiles are objects that travel through the level and explode when they hit something. You create them with `Level.createProjectile`, configure their speed, direction, homing behavior, and explosion rules, then fire them — either automatically at creation or manually in your own code. Every projectile can carry `onFire`, `onExplode`, and `onUpdate` callbacks so you have frame-by-frame control over its behavior.
+
+---
+
+## Creating a Projectile
+
+The simplest signature creates a projectile in the main section using an inline property table:
+
+```lua
+--- @param projectileProperties { ... }
+--- @return Projectile
+function Level.createProjectile(projectileProperties)
+
+--- Create in a named section
+--- @param sectionId string
+--- @param projectileProperties { ... }
+--- @return Projectile
+function Level.createProjectile(sectionId, projectileProperties)
+```
+
+You can also pass a [`ProjectileRequest`](#using-projectilerequest) object instead of a table.
+
+### Full Property Table
+
+All fields except `skin`, `origin`, and `rotation` are optional.
+
+| Field | Type | Description |
+|---|---|---|
+| `skin` | `string` | Skin ID to use (see `Level.getAvailableProjectileSkins()`) |
+| `origin` | `Vector3` | World-space spawn position |
+| `rotation` | `Quaternion` | Initial facing direction |
+| `tag` | `string?` | Arbitrary tag for identification |
+| `power` | `number?` | Damage power of the projectile |
+| `lifetime` | `number?` | Seconds before the projectile auto-explodes |
+| `speed` | `number?` | Initial travel speed |
+| `acceleration` | `number?` | Speed change per second |
+| `angularSpeed` | `number?` | Rotation speed |
+| `angularAcceleration` | `number?` | Rotation acceleration |
+| `angularLocalAxisRotation` | `Vector3` | Local axis around which the projectile spins |
+| `homingStrength` | `number?` | How strongly the projectile tracks the ball (0 = none) |
+| `maxHomingRange` | `number?` | Maximum distance at which homing activates |
+| `autoFire` | `boolean?` | If `true`, fire immediately at creation |
+| `explodeOnCollideWithBlocks` | `boolean?` | Explode on block contact |
+| `explodeOnCollideWithItems` | `boolean?` | Explode on item contact |
+| `explodeOnCollideWithEnemies` | `boolean?` | Explode on enemy contact |
+| `explodeOnCollideWithBalls` | `boolean?` | Explode on ball contact |
+| `explodeOnCollideWithDecorations` | `boolean?` | Explode on decoration contact |
+| `explodeOnCollideWithProjectiles` | `boolean?` | Explode on projectile contact |
+| `onFire` | `function?` | Called when the projectile is fired |
+| `onExplode` | `function?` | Called when the projectile explodes |
+| `onUpdate` | `function?` | Called every frame with `(projectile, deltaTime)` |
+
+---
+
+## Using `ProjectileRequest`
+
+`ProjectileRequest` is a class alternative to the inline table. It is useful when you want to build the configuration incrementally or reuse a base configuration across multiple enemies.
+
+```lua
+--- Constructors
+function ProjectileRequest.new(): ProjectileRequest
+function ProjectileRequest.new(skin: string): ProjectileRequest
+function ProjectileRequest.new(skin: string, origin: Vector3, rotation: Quaternion): ProjectileRequest
+```
+
+Set properties directly on the object:
+
+```lua
+local req = ProjectileRequest.new("fireball_skin")
+req.origin    = Vector3.new(10, 2, 5)
+req.rotation  = Quaternion.identity        -- point forward
+req.speed     = 8.0
+req.lifetime  = 6.0
+req.homingStrength  = 2.5
+req.maxHomingRange  = 20.0
+req.autoFire  = true
+req.explodeOnCollideWithBalls = true
+
+req.onExplode = function(projectile)
+    Dialog.createTemporary("Direct hit!", 1.5, Color.red)
+end
+
+local proj = Level.createProjectile(req)
+```
+
+---
+
+## Querying Available Skins
+
+Before you create a projectile, make sure the skin you want actually exists in the level:
+
+```lua
+--- Returns a table of skin ID strings for the main section
+function Level.getAvailableProjectileSkins(): table
+
+--- Returns skins for a specific section
+function Level.getAvailableProjectileSkins(sectionId: string): table
+```
+
+```lua
+-- Print all available skins to the log (useful during development)
+local skins = Level.getAvailableProjectileSkins()
+for _, skinId in ipairs(skins) do
+    print("Skin available: " .. skinId)
+end
+```
+
+---
+
+## The `Projectile` Object
+
+`Level.createProjectile` returns a `Projectile`. You can read and write its properties after creation, and call methods to fire or detonate it manually.
+
+### Key Properties
+
+| Property | Type | R/W | Description |
+|---|---|---|---|
+| `isActive` | `boolean` | R | `true` while the projectile is in flight |
+| `isHoming` | `boolean` | R | `true` when `homingStrength > 0` |
+| `position` | `Vector3` | R/W | Current world position |
+| `rotation` | `Quaternion` | R/W | Current rotation |
+| `forward` | `Vector3` | R | Forward direction vector |
+| `velocity` | `Vector3` | R | Current velocity vector |
+| `speed` | `number` | R/W | Travel speed |
+| `lifetime` | `number` | R/W | Remaining lifetime |
+| `homingStrength` | `number` | R/W | Homing tracking strength |
+
+### Fire and Explode
+
+```lua
+-- Fire from the projectile's current origin and rotation
+function Projectile:fire(): any
+
+-- Fire with a specific initial speed override
+function Projectile:fire(initialSpeed: number): any
+
+-- Fire from a specific world position
+function Projectile:fire(position: Vector3): any
+
+-- Fire with a specific rotation
+function Projectile:fire(rotation: Quaternion): any
+
+-- Fire from a position and rotation
+function Projectile:fire(position: Vector3, rotation: Quaternion): any
+
+-- Fire with full override: position, rotation, and speed
+function Projectile:fire(position: Vector3, rotation: Quaternion, initialSpeed: number): any
+
+-- Explode immediately at current position
+function Projectile:explode(): any
+
+-- Explode with a specific rotation (for directional explosion effects)
+function Projectile:explode(rotation: Quaternion): any
+```
+
+---
+
+## The `OnProjectileCollide` Hook
+
+Any entity script (Ball, Block, Enemy, Item, Side) can define `OnProjectileCollide` to react when a projectile hits it:
+
+```lua
+---@param self Ball
+---@param projectile Projectile
+function OnProjectileCollide(self, projectile)
+    -- 'projectile' is the Projectile that struck this entity
+    if projectile.tag == "enemy_shot" then
+        Dialog.createTemporary("Ouch! You were hit!", 2.0, Color.red)
+    end
+end
+```
+
+<Note>
+  `OnProjectileCollide` fires **before** the projectile explodes. The projectile is still active inside this callback.
+</Note>
+
+---
+
+## Complete Example — Enemy That Fires a Homing Projectile
+
+This script is attached to an **Enemy** entity. It fires a homing shot at the ball every 4 seconds using a cooldown tracked via elapsed time. When the projectile hits the ball, the player loses a life.
+
+```lua
+-- Enemy script: homing_shooter
+
+local FIRE_INTERVAL = 4.0   -- seconds between shots
+local PROJECTILE_SKIN = "enemy_fireball"
+
+local cooldown = FIRE_INTERVAL  -- start ready to fire on spawn
+
+function OnSpawn(self)
+    -- Nothing special needed on spawn; cooldown starts at max
+end
+
+function OnUpdate(self, deltaTime)
+    cooldown = cooldown - deltaTime
+
+    if cooldown <= 0 then
+        cooldown = FIRE_INTERVAL
+        fireAtBall(self)
+    end
+end
+
+function fireAtBall(enemy)
+    local ball = Level.currentBall
+    if ball == nil or not ball.isAlive then
+        return
+    end
+
+    -- Calculate direction from enemy to ball
+    local enemyPos = enemy.position
+    local ballPos  = ball.position
+
+    local dx = ballPos.x - enemyPos.x
+    local dy = ballPos.y - enemyPos.y
+    local dz = ballPos.z - enemyPos.z
+
+    -- Use Quaternion.lookRotation to face the ball
+    local direction = Vector3.new(dx, dy, dz).normalized
+    local shotRotation = Quaternion.lookRotation(direction, Vector3.up)
+
+    Level.createProjectile({
+        skin     = PROJECTILE_SKIN,
+        origin   = Vector3.new(enemyPos.x, enemyPos.y, enemyPos.z),
+        rotation = shotRotation,
+        tag      = "enemy_shot",
+        speed    = 6.0,
+        lifetime = 8.0,
+        homingStrength = 3.0,
+        maxHomingRange = 25.0,
+        autoFire = true,
+        explodeOnCollideWithBalls   = true,
+        explodeOnCollideWithBlocks  = true,
+
+        onFire = function(projectile)
+            -- Optional: play a visual cue (not shown — use engine events)
+        end,
+
+        onExplode = function(projectile)
+            -- If the projectile is near the ball when it explodes, lose a life
+            local proj  = projectile
+            local bPos  = Level.currentBall.position
+            local dist  = Vector3.distance(proj.position, bPos)
+            if dist < 1.5 then
+                Level.loseLives(1)
+                Dialog.createTemporary("You were hit!", 2.0, Color.red)
+            end
+        end,
+    })
+end
+
+function OnDeath(self)
+    -- Enemy died; nothing to clean up since projectiles have their own lifetime
+end
+```
+
+<Warning>
+  Always check `ball.isAlive` before reading `ball.position` inside `OnUpdate`. The ball reference from `Level.currentBall` can briefly be inactive between levels or after a death sequence.
+</Warning>
+
+<Tip>
+  Use `Vector3` and `Quaternion` for all position and rotation math. See the [Vector3 reference](/api/classes/vector3) and [Quaternion reference](/api/classes/quaternion) pages for a full list of helpers like `Vector3.distance`, `Vector3.normalized`, and `Quaternion.lookRotation`.
+</Tip>

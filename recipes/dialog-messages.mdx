@@ -1,0 +1,194 @@
+---
+title: "How to Show Dialog Messages to the Player"
+description: "Learn how to use the Dialog namespace to display closeable, temporary, and manually controlled messages in your RollingQuest levels."
+sidebarTitle: "Dialog Messages"
+---
+
+The `Dialog` namespace gives you three distinct ways to present text to the player during a level: messages that require a button press to dismiss, messages that disappear on their own after a fixed duration, and messages whose entire lifecycle your script controls manually. Choosing the right type makes your level feel polished and purposeful.
+
+## Message Types at a Glance
+
+| Type | How it closes | Best for |
+|------|---------------|----------|
+| **Closeable** | Player presses a button | Tutorial instructions, important alerts |
+| **Temporary** | Auto-dismisses after N seconds | Hints, countdown warnings, short feedback |
+| **Manual** | Your script calls `destroyManual` | Story dialog, scripted narrative sequences |
+
+---
+
+## Closeable Messages
+
+A closeable message blocks the player's attention until they actively dismiss it. Use this whenever the player **must read** a message before continuing.
+
+### Signatures
+
+```lua
+-- Create with default black background
+function Dialog.createCloseable(message: string): any
+
+-- Create with a custom background color
+function Dialog.createCloseable(message: string, backgroundColor: Color): any
+
+-- Re-open a message stored by ID (default black background)
+function Dialog.openCloseable(messageId: string): any
+
+-- Re-open a message stored by ID with a custom background color
+function Dialog.openCloseable(messageId: string, backgroundColor: Color): any
+```
+
+`Dialog.createCloseable` displays the message immediately. `Dialog.openCloseable` is used to re-show a previously created message using the ID returned from creation.
+
+### Example — Tutorial at Level Start
+
+Attach this script to the **Level** entity. The `OnStart` hook fires as soon as the level loads.
+
+```lua
+function OnStart(self)
+    -- Warm amber background to match the tutorial theme
+    local bgColor = Color.new(0.6, 0.3, 0.0, 0.85)
+
+    Dialog.createCloseable(
+        "Roll onto every key to unlock the exit!\nAvoid the red spikes or you'll lose a life.",
+        bgColor
+    )
+end
+```
+
+<Tip>
+  Keep closeable messages short — one or two sentences. If you need to show a series of instructions, chain multiple calls inside `Level.delayAction` to space them out.
+</Tip>
+
+---
+
+## Temporary Messages
+
+A temporary message shows itself and then automatically vanishes after the number of seconds you specify. The player never needs to interact with it.
+
+### Signatures
+
+```lua
+-- Create and show immediately (default black background)
+function Dialog.createTemporary(message: string, duration: number): any
+
+-- Create and show with a custom background color
+function Dialog.createTemporary(message: string, duration: number, backgroundColor: Color): any
+
+-- Re-open a stored message by ID
+function Dialog.openTemporary(messageId: string, duration: number): any
+
+-- Re-open a stored message by ID with a custom background color
+function Dialog.openTemporary(messageId: string, duration: number, backgroundColor: Color): any
+```
+
+The `duration` parameter is measured in **seconds**.
+
+### Example — Countdown Warning
+
+This script runs in the **Level** `OnUpdate` hook and shows a warning when the hourglass drops below 15 seconds.
+
+```lua
+local warningSent = false
+
+function OnUpdate(self, deltaTime)
+    if not warningSent and Level.isHourglassEnabled and Level.remainingTime <= 15.0 then
+        warningSent = true
+
+        local urgentColor = Color.new(0.8, 0.1, 0.0, 0.9) -- deep red
+        Dialog.createTemporary("Hurry! Less than 15 seconds remain!", 4.0, urgentColor)
+    end
+end
+```
+
+<Note>
+  The `warningSent` guard prevents the message from re-firing every frame once the threshold is crossed. Always use a flag like this with `OnUpdate`.
+</Note>
+
+---
+
+## Manual Messages
+
+Manual messages give you complete control. You create the dialog with an ID, open and close it whenever you like, and destroy it when you no longer need it.
+
+### Signatures
+
+```lua
+-- Create (does not show yet)
+function Dialog.createManual(dialogId: string, message: string): any
+function Dialog.createManual(dialogId: string, message: string, backgroundColor: Color): any
+
+-- Show a previously created manual message
+function Dialog.openManual(dialogId: string, messageId: string): any
+function Dialog.openManual(dialogId: string, messageId: string, backgroundColor: Color): any
+
+-- Check whether a manual dialog still exists
+function Dialog.existsManual(dialogId: string): boolean
+
+-- Remove the dialog entirely
+function Dialog.destroyManual(dialogId: string): any
+```
+
+The `dialogId` is a unique string key that identifies this dialog in your script. The `messageId` is the identifier of the specific message content to display inside it.
+
+### Example — Scripted Story Dialog Sequence
+
+This script is attached to a **Block** entity. When the ball rolls onto the block (`OnBallRoll` with `rollIn = true`), it kicks off a three-part dialog sequence using `Level.delayAction` to pace the lines.
+
+```lua
+local storyTriggered = false
+
+function OnBallRoll(self, rollIn, side, ball)
+    if not rollIn or storyTriggered then
+        return
+    end
+    storyTriggered = true
+
+    local storyColor = Color.new(0.05, 0.05, 0.2, 0.92) -- dark navy
+
+    -- Show the first line immediately
+    Dialog.createManual("story_dialog", "The ancient gate stirs...", storyColor)
+    Dialog.openManual("story_dialog", "story_dialog")
+
+    -- Replace the message after 3 seconds
+    Level.delayAction(3.0, function()
+        if Dialog.existsManual("story_dialog") then
+            Dialog.destroyManual("story_dialog")
+        end
+        Dialog.createManual("story_dialog", "Only the one who carries all keys may pass.", storyColor)
+        Dialog.openManual("story_dialog", "story_dialog")
+    end)
+
+    -- Dismiss after another 4 seconds
+    Level.delayAction(7.0, function()
+        if Dialog.existsManual("story_dialog") then
+            Dialog.destroyManual("story_dialog")
+        end
+    end)
+end
+```
+
+<Warning>
+  Always call `Dialog.existsManual` before `Dialog.destroyManual`. If the dialog has already been cleaned up (for example, by a restart), calling destroy on a non-existent ID will produce an error.
+</Warning>
+
+---
+
+## Customising Background Colors
+
+Every `create*` and `open*` function accepts an optional `Color` as its last argument. Colors are RGBA values in the `0.0`–`1.0` range.
+
+```lua
+-- Using a named preset
+local bg = Color.red
+
+-- Using an RGB value (fully opaque)
+local bg = Color.new(0.1, 0.4, 0.8)
+
+-- Using RGBA (semi-transparent dark teal)
+local bg = Color.new(0.0, 0.3, 0.3, 0.8)
+```
+
+When you omit the color argument, the game uses a solid black background.
+
+<Tip>
+  A semi-transparent background (alpha around `0.8`) lets the player see the level behind the dialog, which feels less intrusive for short temporary messages.
+</Tip>

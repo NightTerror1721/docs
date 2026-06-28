@@ -1,0 +1,152 @@
+---
+title: "Enemy — Enemy Entity API Reference"
+description: "API reference for the Enemy class in RollingQuest Lua scripting. Access enemy position, basis, EnemyInteraction flags, and kill, enable, disable methods."
+sidebarTitle: "Enemy"
+---
+
+The `Enemy` class represents a hostile entity that roams the game world and can harm or interact with the ball. Scripts attached to an enemy receive it as `self` in hooks such as `OnDeath` and `OnUpdate`. Through the `Enemy` API you can read its position and orientation, toggle whether it responds to specific level hazards (via `EnemyInteraction` flags), and kill or disable it programmatically.
+
+## Properties
+
+### Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Enemy` (`4`). |
+| `name` | `string` | ✅ | Name derived from the enemy's template. |
+| `tag` | `string` | ✅ | Tag used for grouping and scripted lookup. |
+
+### Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the enemy. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the enemy. |
+| `basis` | `Basis` | ✅ | Local coordinate-system basis of the enemy. |
+| `section` | `string` | ✅ | ID of the level section the enemy is currently in. |
+| `currentGroundSide` | `Side` | ✅ | The side the enemy is standing on, or `nil` if airborne. |
+
+### Data
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the enemy. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this enemy. |
+
+## Methods
+
+### enable / disable
+
+```lua
+function Enemy:enable()
+function Enemy:disable()
+```
+
+Activate or deactivate the enemy. A disabled enemy is removed from play until re-enabled.
+
+### kill
+
+```lua
+function Enemy:kill()
+```
+
+Destroys the enemy immediately, triggering its death logic.
+
+### enableInteraction / disableInteraction
+
+```lua
+--- @param interaction EnemyInteraction
+function Enemy:enableInteraction(interaction)
+
+--- @param interaction EnemyInteraction
+function Enemy:disableInteraction(interaction)
+```
+
+Toggle whether the enemy responds to a specific `EnemyInteraction` type.
+
+### setInteractionEnabled
+
+```lua
+--- @param interaction EnemyInteraction
+--- @param enabled boolean
+function Enemy:setInteractionEnabled(interaction, enabled)
+```
+
+A single-call alternative to `enableInteraction`/`disableInteraction`.
+
+### isInteractionEnabled
+
+```lua
+--- @param interaction EnemyInteraction
+--- @return boolean
+function Enemy:isInteractionEnabled(interaction)
+```
+
+Returns `true` when the given interaction is currently active for this enemy.
+
+### Type-cast helpers
+
+Use these to narrow a generic entity reference to a concrete type. Each throws an error if the cast is invalid.
+
+```lua
+function Enemy:asLevel()      -- returns Level
+function Enemy:asBlock()      -- returns Block
+function Enemy:asSide()       -- returns Side
+function Enemy:asItem()       -- returns Item
+function Enemy:asEnemy()      -- returns Enemy
+function Enemy:asBall()       -- returns Ball
+function Enemy:asDecoration() -- returns Decoration
+```
+
+## EnemyInteraction Enum
+
+The `EnemyInteraction` enum controls which level hazards and mechanics the enemy reacts to. Use it with the interaction methods above.
+
+| Member | Value | Description |
+|---|---|---|
+| `Spikes` | `0` | Enemy is affected by spike sides. |
+| `Lasers` | `1` | Enemy is affected by laser sides. |
+| `Teleports` | `2` | Enemy can be transported by teleport sides. |
+| `Buttons` | `3` | Enemy can activate button sides. |
+| `LightSensors` | `4` | Enemy can trigger light-sensor sides. |
+| `DirectionRestrictions` | `5` | Enemy obeys one-way and multi-way direction limits. |
+| `Ice` | `6` | Enemy is affected by icy surfaces. |
+| `Fire` | `7` | Enemy is affected by fire/flame surfaces. |
+| `BreakingBlocks` | `8` | Enemy interacts with breaking-block mechanics. |
+| `TrampsAndVents` | `9` | Enemy is affected by trampolines and vents. |
+| `Magnets` | `10` | Enemy is affected by magnetic sides. |
+| `Rotators` | `11` | Enemy is affected by rotator sides. |
+| `BallShield` | `12` | Enemy can interact with a ball's active shield. |
+| `InvisibleBlocks` | `13` | Enemy can collide with invisible blocks. |
+
+## EnemyData
+
+`EnemyData` is the mutable data representation used when building or modifying level data (e.g. in `OnLevelLoad`). It exposes `template`, `scriptRef`, `scriptTag`, `scriptVars`, `properties`, the read-only `initialPosition` (`BlockLocation`), and an `interactions` array (`EnemyInteraction[]`). The same four interaction helper methods — `enableInteraction`, `disableInteraction`, `setInteractionEnabled`, `isInteractionEnabled` — are available on `EnemyData` for use at design time. Call `clear()` to reset all fields.
+
+## Usage Example
+
+The `OnDeath` hook fires when an enemy is killed. The example below checks whether the ball that killed the enemy has a shield, then disables all spike interactions on a second enemy:
+
+```lua
+function OnDeath(self, ball)
+    -- self is an Enemy
+    Log.info("Enemy killed: " .. self.name)
+
+    if ball ~= nil and ball.hasShield then
+        Log.info("Ball used its shield to kill the enemy.")
+    end
+end
+```
+
+You can also interact with enemies from a side script. The snippet below kills every enemy in the section when the ball rolls onto a specific trigger side:
+
+```lua
+function OnBallRoll(self, ball)
+    if self.tag ~= "kill_trigger" then return end
+
+    local section = Level.getSection(self.section)
+    for _, enemy in ipairs(section:getEnemies()) do
+        enemy:kill()
+    end
+end
+```

@@ -1,0 +1,117 @@
+---
+title: "Decoration — Visual Decoration Entity API Reference"
+description: "API reference for the Decoration class in RollingQuest Lua scripting. Access decoration identity, world transform, section ID, and enable/disable methods."
+sidebarTitle: "Decoration"
+---
+
+The `Decoration` class represents a purely visual object placed on a side in a RollingQuest level. Decorations do not affect gameplay — they have no collision or item logic — but they can be toggled on and off via script to create visual effects, reveal hidden scenery, or synchronise animations with level events. Scripts attached to a decoration receive it as `self`, and you can also retrieve decorations from a side via `side.decoration` or by iterating a section's decorations.
+
+## Properties
+
+### Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `type` | `EntityType` | ✅ | Always `EntityType.Decoration` (`6`). |
+| `name` | `string` | ✅ | Name of the decoration template. |
+| `tag` | `string` | ✅ | Tag used for grouping and scripted lookup. |
+
+### Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ✅ | World-space position of the decoration. |
+| `rotation` | `Quaternion` | ✅ | World-space rotation of the decoration. |
+| `basis` | `Basis` | ✅ | Local coordinate-system basis of the decoration. |
+| `slot` | `BlockSlot` | ✅ | Grid slot of the block the decoration is attached to. |
+| `section` | `string` | ✅ | ID of the level section containing the decoration. |
+
+### State
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `isEnabled` | `boolean` | ✅ | `true` while the decoration is visible in the scene. |
+| `properties` | `ElementPropertyPool` | ✅ | Custom property pool attached to the decoration. |
+| `localData` | `RawLocalData` | ✅ | Per-instance local data store for this decoration. |
+
+## Methods
+
+### enable / disable
+
+```lua
+function Decoration:enable()
+function Decoration:disable()
+```
+
+Show or hide the decoration. Disabling a decoration removes it visually from the level without deleting the underlying data; call `enable()` to restore it.
+
+### Type-cast helpers
+
+Use these to narrow a generic entity reference to a concrete type. Each throws an error if the cast is invalid.
+
+```lua
+function Decoration:asLevel()      -- returns Level
+function Decoration:asBlock()      -- returns Block
+function Decoration:asSide()       -- returns Side
+function Decoration:asItem()       -- returns Item
+function Decoration:asEnemy()      -- returns Enemy
+function Decoration:asBall()       -- returns Ball
+function Decoration:asDecoration() -- returns Decoration
+```
+
+## DecorationData
+
+`DecorationData` is the mutable representation used when constructing or modifying level data (e.g. in `OnLevelLoad`). It exposes the following fields:
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `orientation` | `Orientation` | ❌ | The initial facing orientation of the decoration. |
+| `template` | `string` | ❌ | Template identifier that selects the decoration's appearance. |
+| `scriptRef` | `string` | ❌ | Script file reference attached to the decoration. |
+| `scriptTag` | `string` | ❌ | Tag forwarded to the decoration's script. |
+| `scriptVars` | `ScriptVariables` | ✅ | Variable table passed to the decoration's script. |
+| `properties` | `ElementPropertiesData` | ✅ | Design-time property data. |
+
+Call `clear()` to reset a `DecorationData` instance to empty defaults.
+
+## Usage Example
+
+The following example shows a side script that hides all decorations tagged `"hidden_deco"` when the ball first rolls onto the side, then reveals them again after a two-second delay:
+
+```lua
+function OnBallRoll(self, ball)
+    -- self is a Side
+    local section = Level.getSection(self.section)
+
+    -- Collect matching decorations
+    local targets = {}
+    for _, deco in ipairs(section:getDecorations()) do
+        if deco.tag == "hidden_deco" then
+            deco:disable()
+            table.insert(targets, deco)
+        end
+    end
+
+    -- Re-enable after two seconds
+    Timer.schedule(2.0, function()
+        for _, deco in ipairs(targets) do
+            deco:enable()
+        end
+    end)
+end
+```
+
+You can also access a decoration directly from the side it is attached to:
+
+```lua
+function OnBallRoll(self, ball)
+    if self.hasDecoration then
+        local deco = self.decoration
+        Log.info("Side decoration: " .. deco.name .. " enabled=" .. tostring(deco.isEnabled))
+
+        if deco.tag == "reward_flag" then
+            deco:enable()
+        end
+    end
+end
+```

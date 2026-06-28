@@ -1,0 +1,102 @@
+---
+title: "Elements Namespace — RollingQuest Lua Scripting API"
+description: "Reference for the Elements namespace and TaggedElementsTable: look up any tagged entity in the current level by its tag string directly from Lua scripts."
+sidebarTitle: "Elements"
+---
+
+The `Elements` namespace provides a single entry point for looking up any entity in the current level by its editor-assigned tag. When you assign a tag to a block, side, item, enemy, ball, or decoration in the level editor, that entity becomes accessible at runtime through `Elements.tagged`. Tags let you avoid hard-coded coordinate lookups and write scripts that stay correct even when you rearrange the level geometry.
+
+---
+
+## Variables
+
+### `Elements.tagged`
+
+```lua
+--- static
+---@type table<string, any>
+Elements.tagged
+```
+
+A `TaggedElementsTable` — a special Lua table where each key is a tag string and the value is either a single entity object or an array of entity objects, depending on how many entities share that tag.
+
+- **Type:** `TaggedElementsTable` (behaves as `table<string, any>`)
+- **Read-only:** Yes
+
+---
+
+## TaggedElementsTable
+
+A `TaggedElementsTable` maps tag strings to the entities that carry them. The lookup result depends on how many entities share the same tag:
+
+- **Exactly one entity** — the value is that entity object directly.
+- **Multiple entities** — the value is a Lua array (`table`) of entity objects.
+- **No entity** — the value is `nil`.
+
+You never construct a `TaggedElementsTable` yourself; you always access it via `Elements.tagged`.
+
+<Note>
+Tag names are case-sensitive. A tag of `"door"` and a tag of `"Door"` are two different keys.
+</Note>
+
+---
+
+## Usage Examples
+
+### Looking up a single entity
+
+```lua
+-- Retrieve the block tagged "exit-gate"
+local gate = Elements.tagged["exit-gate"]
+if gate ~= nil then
+    gate:activate()
+end
+```
+
+### Looking up multiple entities with the same tag
+
+```lua
+-- Retrieve all enemies tagged "guard" and stun them
+local guards = Elements.tagged["guard"]
+if guards ~= nil then
+    for _, enemy in ipairs(guards) do
+        enemy:stun()
+    end
+end
+```
+
+### Reacting to an event and toggling tagged elements
+
+```lua
+function OnKeyCollected()
+    -- Open every door tagged "key-door" when the player picks up a key
+    local doors = Elements.tagged["key-door"]
+    if doors == nil then return end
+
+    -- Handle both single-entity and multi-entity cases
+    if doors.activate ~= nil then
+        -- Single entity — it has methods directly
+        doors:activate()
+    else
+        for _, door in ipairs(doors) do
+            door:activate()
+        end
+    end
+end
+```
+
+### Sending a signal to tagged entities
+
+You can combine `Elements.tagged` with the `Signals` namespace to communicate without a direct method call:
+
+```lua
+-- Emit a signal to the element tagged "boss-trigger"
+local trigger = Elements.tagged["boss-trigger"]
+if trigger ~= nil then
+    Signals.emitTo("OnBossStart", trigger)
+end
+```
+
+<Note>
+When you need to broadcast to all entities sharing a tag, prefer `Signals.emitToTag(signalId, tag)` — it handles the single vs. multiple entity distinction automatically.
+</Note>

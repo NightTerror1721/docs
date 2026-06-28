@@ -1,0 +1,272 @@
+---
+title: "Campaign Namespace — RollingQuest Lua Scripting API"
+description: "Full reference for the Campaign namespace: read campaign mode, episode and level data, completion state, and global save data from your Lua scripts."
+sidebarTitle: "Campaign"
+---
+
+The `Campaign` namespace gives you read-only access to the overarching campaign that contains the currently running level. Use it to query the campaign's structure — episodes, level lists, completion records — or to read and write campaign-wide save data via `Campaign.globalData`. All variables are read-only unless noted.
+
+---
+
+## Variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `Campaign.name` | `string` | The internal name of the current campaign. |
+| `Campaign.isArcadeMode` | `boolean` | `true` when the campaign runs in arcade mode. |
+| `Campaign.isExplorationMode` | `boolean` | `true` when the campaign runs in exploration mode. |
+| `Campaign.episodeCount` | `integer` | Total number of episodes in the campaign. |
+| `Campaign.episodes` | `CampaignEpisode[]` | Array of every episode in the campaign. |
+| `Campaign.normalLevelsCount` | `integer` | Total number of normal levels across all episodes. |
+| `Campaign.firstNormalLevel` | `CampaignLevel` | The very first normal level of the campaign. |
+| `Campaign.requiredFruitsToBonus` | `integer` | Number of fruits needed to unlock the bonus level. |
+| `Campaign.levelsUntilSaveGame` | `integer` | How many levels pass before an automatic save. |
+| `Campaign.randomBonusMusicCount` | `integer` | Number of tracks in the random bonus music pool. |
+| `Campaign.randomBonusMusic` | `string[]` | Array of music track names in the bonus pool. |
+| `Campaign.randomBonusBallsCount` | `integer` | Number of balls in the random bonus ball pool. |
+| `Campaign.isNormalSaveGameEnabled` | `boolean` | `true` if the normal save-game system is active. |
+| `Campaign.isLoopModeEnabled` | `boolean` | `true` if the campaign loops after the final level. |
+| `Campaign.globalData` | `LocalData` | Persistent key-value store shared across all levels in the campaign. |
+| `Campaign.completionState` | `CampaignCompletionState` | Object tracking completion status for every level and episode. |
+
+---
+
+## Functions
+
+### `getEpisode`
+
+Returns a `CampaignEpisode` by its zero-based index or by its name.
+
+```lua
+--- @param index integer
+--- @return CampaignEpisode
+function Campaign.getEpisode(index)
+
+--- @param name string
+--- @return CampaignEpisode
+function Campaign.getEpisode(name)
+```
+
+### `hasEpisode`
+
+Returns `true` if an episode with the given name exists in the campaign.
+
+```lua
+--- @param name string
+--- @return boolean
+function Campaign.hasEpisode(name)
+```
+
+### `getNormalLevelByNumber`
+
+Returns the `CampaignLevel` whose sequential number matches `number`. Normal level numbers are one-based and count across all episodes.
+
+```lua
+--- @param number integer
+--- @return CampaignLevel
+function Campaign.getNormalLevelByNumber(number)
+```
+
+---
+
+## CampaignEpisode
+
+A `CampaignEpisode` object represents one episode inside the campaign. You obtain one via `Campaign.getEpisode()` or by iterating `Campaign.episodes`.
+
+### Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `episode.campaign` | `Campaign` | Parent campaign reference. |
+| `episode.name` | `string` | Name of the episode. |
+| `episode.index` | `integer` | Zero-based position of this episode. |
+| `episode.normalLevelsCount` | `integer` | Number of normal levels in this episode. |
+| `episode.bonusLevelsCount` | `integer` | Number of bonus levels in this episode. |
+| `episode.secretLevelsCount` | `integer` | Number of secret levels in this episode. |
+| `episode.normalLevels` | `CampaignLevel[]` | Array of normal levels. |
+| `episode.bonusLevels` | `CampaignLevel[]` | Array of bonus levels. |
+| `episode.secretLevels` | `CampaignLevel[]` | Array of secret levels. |
+| `episode.unlockedNormalLevels` | `integer` | Count of normal levels currently unlocked. |
+| `episode.requiredFruitsToBonus` | `integer` | Fruits needed to unlock the bonus level for this episode. |
+| `episode.overrideMusic` | `string` | Music override for the episode, if set. |
+| `episode.overrideTheme` | `string` | Theme override for the episode, if set. |
+| `episode.overrideThemeMode` | `ThemeMode?` | Theme-mode override, or `nil` if not set. |
+| `episode.selectableBallsCount` | `integer` | Number of balls the player can choose from. |
+| `episode.isUnlocked` | `boolean` | `true` if the episode is available to play. |
+| `episode.isLocked` | `boolean` | `true` if the episode is still locked. |
+
+### Methods
+
+```lua
+--- @param index integer
+--- @return CampaignLevel
+function CampaignEpisode:getNormalLevel(index)
+
+--- @param index integer
+--- @return CampaignLevel
+function CampaignEpisode:getBonusLevel(index)
+
+--- @param name string
+--- @return CampaignLevel
+function CampaignEpisode:getSecretLevel(name)
+
+--- @param name string
+--- @return boolean
+function CampaignEpisode:hasSecretLevel(name)
+
+--- @param normalLevelIndex integer
+--- @return CampaignLevel
+function CampaignEpisode:getBonusLevelByNormalLevelIndex(normalLevelIndex)
+```
+
+---
+
+## CampaignLevel
+
+A `CampaignLevel` object represents a single level entry within an episode. You obtain one from a `CampaignEpisode` method, from `Campaign.getNormalLevelByNumber()`, or from `Campaign.firstNormalLevel`.
+
+### Properties
+
+| Property | Type | Description |
+|---|---|---|
+| `level.campaign` | `Campaign` | Parent campaign reference. |
+| `level.episode` | `CampaignEpisode` | Episode that contains this level. |
+| `level.name` | `string` | Internal level name. |
+| `level.alias` | `string` | Display alias shown in the UI. |
+| `level.explorationName` | `string` | Name used in exploration mode. |
+| `level.index` | `integer` | Position of this level within its episode. |
+| `level.number` | `integer` | Global sequential number (normal levels only). |
+| `level.hasValidNumber` | `boolean` | `true` if this level has a valid sequential number. |
+| `level.isNormal` | `boolean` | `true` for story levels. |
+| `level.isBonus` | `boolean` | `true` for bonus levels. |
+| `level.isSecret` | `boolean` | `true` for secret levels. |
+| `level.isHidden` | `boolean` | `true` if the level is not shown in the map. |
+| `level.isPenaltyEnabled` | `boolean` | `true` if score penalties apply to this level. |
+| `level.hasNextNormalLevel` | `boolean` | `true` if a normal level follows this one. |
+| `level.nextNormalLevel` | `CampaignLevel` | The next normal level in sequence. |
+| `level.hasAssociatedBonusLevel` | `boolean` | `true` if a bonus level is linked to this one. |
+| `level.associatedBonusLevel` | `CampaignLevel` | The associated bonus level. |
+| `level.overrideMusic` | `string` | Per-level music override. |
+| `level.overrideTheme` | `string` | Per-level theme override. |
+| `level.overrideThemeMode` | `ThemeMode?` | Per-level theme-mode override. |
+| `level.useRandomBonusMusic` | `boolean` | `true` if this level draws music from the bonus pool. |
+| `level.useRandomBonusBall` | `boolean` | `true` if the ball is chosen randomly for this level. |
+| `level.isUnlocked` | `boolean` | `true` if the level can be played. |
+| `level.isLocked` | `boolean` | `true` if the level is locked. |
+| `level.isCompleted` | `boolean` | `true` if the player has finished this level. |
+| `level.isCompletedWithinHourglassTime` | `boolean` | `true` if completed before the hourglass ran out. |
+| `level.isTreasureCollected` | `boolean` | `true` if treasure was collected on a completed run. |
+| `level.isFruitCollected` | `boolean` | `true` if the fruit was collected on a completed run. |
+
+---
+
+## CampaignCompletionState
+
+`Campaign.completionState` is a `CampaignCompletionState` object. Use it to query or update persistent completion records for any level.
+
+### Query methods
+
+```lua
+--- @param level CampaignLevel
+--- @return boolean
+function CampaignCompletionState:isLevelCompleted(level)
+
+--- @param level CampaignLevel
+--- @return LevelCompletionState
+function CampaignCompletionState:getLevelState(level)
+
+--- @param episode CampaignEpisode
+--- @return EpisodeCompletionState
+function CampaignCompletionState:getEpisodeState(episode)
+
+--- @param campaign Campaign
+--- @return boolean
+function CampaignCompletionState:hasAllFruitsCollected(campaign)
+```
+
+### Update methods
+
+```lua
+--- @param level CampaignLevel
+--- @param isCompleted boolean
+--- @return any
+function CampaignCompletionState:setLevelIsCompleted(level, isCompleted)
+
+--- @param level CampaignLevel
+--- @param isDiscovered boolean
+--- @return any
+function CampaignCompletionState:setLevelIsDiscovered(level, isDiscovered)
+
+--- @param level CampaignLevel
+--- @param isTreasureCollected boolean
+--- @return any
+function CampaignCompletionState:setLevelIsTreasureCollected(level, isTreasureCollected)
+
+--- @param level CampaignLevel
+--- @param isFruitCollected boolean
+--- @return any
+function CampaignCompletionState:setLevelIsFruitCollected(level, isFruitCollected)
+
+--- @param level CampaignLevel
+--- @param isCompletedWithinHourglassTime boolean
+--- @return any
+function CampaignCompletionState:setLevelIsCompletedWithinHourglassTime(level, isCompletedWithinHourglassTime)
+
+--- @param level CampaignLevel
+--- @param bestScoreLevel integer
+--- @return any
+function CampaignCompletionState:setLevelBestScoreLevel(level, bestScoreLevel)
+
+--- @param level CampaignLevel
+--- @param bestLevelTime number
+--- @return any
+function CampaignCompletionState:setLevelBestLevelTime(level, bestLevelTime)
+```
+
+For bulk updates, create an `UpdateLevelRequest` and apply it in one call:
+
+```lua
+--- @param level CampaignLevel
+--- @return UpdateLevelRequest
+function CampaignCompletionState:createUpdateLevelRequest(level)
+
+--- @param request UpdateLevelRequest
+--- @return any
+function CampaignCompletionState:applyUpdateLevelRequest(request)
+
+--- @param level CampaignLevel
+--- @param isDiscovered boolean?
+--- @param isCompleted boolean?
+--- @param isTreasureCollected boolean?
+--- @param isFruitCollected boolean?
+--- @param isCompletedWithinHourglassTime boolean?
+--- @param bestScoreLevel integer?
+--- @param bestLevelTime number?
+--- @return any
+function CampaignCompletionState:updateLevelState(level, isDiscovered, isCompleted, isTreasureCollected, isFruitCollected, isCompletedWithinHourglassTime, bestScoreLevel, bestLevelTime)
+```
+
+---
+
+## Usage Example
+
+```lua
+function OnStart()
+    -- Print the current episode name and level count
+    local ep = Campaign.getEpisode(Level.campaignEpisode)
+    Logger.info("Episode: " .. ep.name .. " (" .. ep.normalLevelsCount .. " levels)")
+
+    -- Check if the previous normal level was completed
+    local prevNum = Level.campaignNormalLevelNumber - 1
+    if prevNum >= 1 then
+        local prev = Campaign.getNormalLevelByNumber(prevNum)
+        if Campaign.completionState:isLevelCompleted(prev) then
+            Logger.info("You completed level " .. prevNum .. " already!")
+        end
+    end
+
+    -- Store a visit counter in global campaign data
+    local visits = Campaign.globalData:getInt("visits", 0)
+    Campaign.globalData:setInt("visits", visits + 1)
+end
+```

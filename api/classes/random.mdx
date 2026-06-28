@@ -1,0 +1,241 @@
+---
+title: "Random — Seeded Random Number Generation in RollingQuest"
+description: "Reference for the Random class in RollingQuest Lua scripts. Covers seeded constructors, nextInteger, nextNumber, nextBoolean, nextElement, shuffle, serialization, and practical examples."
+sidebarTitle: "Random"
+---
+
+The `Random` class provides a seeded pseudo-random number generator you can use wherever you need unpredictable variety — spawning enemies, picking dialog lines, shuffling loot tables, or adding jitter to movement. Because each `Random` instance carries its own internal state, you can seed it with an integer or string to reproduce the same sequence across runs (great for procedural generation), or omit the seed to get a fresh random sequence every time. The state can also be serialised and deserialised, so you can save and restore a generator's position in its sequence across sessions.
+
+## Constructors
+
+```lua
+-- Unseeded — different sequence every run
+local rng = Random.new()
+
+-- Seeded with an integer — reproducible sequence
+local seededRng = Random.new(42)
+
+-- Seeded with a string
+local namedRng = Random.new("level_3_seed")
+```
+
+| Signature | Description |
+|---|---|
+| `Random.new()` | Creates a generator with a random seed. |
+| `Random.new(seed: integer)` | Creates a generator with the given integer seed. |
+| `Random.new(seed: string)` | Creates a generator with the given string seed. |
+
+---
+
+## Instance Methods
+
+### `nextInteger`
+
+Returns a random integer. Without arguments the range is `[1, max_integer]`. With one argument the range is `[1, maxInclusive]`. With two arguments the range is `[minInclusive, maxInclusive]`.
+
+```lua
+--- @return integer
+function Random:nextInteger()
+
+--- @param maxInclusive integer
+--- @return integer
+function Random:nextInteger(maxInclusive)
+
+--- @param minInclusive integer
+--- @param maxInclusive integer
+--- @return integer
+function Random:nextInteger(minInclusive, maxInclusive)
+```
+
+### `nextNumber`
+
+Returns a random floating-point number. Without arguments the range is `[0, 1)`. With one argument the range is `[0, maxExclusive)`. With two arguments the range is `[minInclusive, maxExclusive)`.
+
+```lua
+--- @return number
+function Random:nextNumber()
+
+--- @param maxExclusive number
+--- @return number
+function Random:nextNumber(maxExclusive)
+
+--- @param minInclusive number
+--- @param maxExclusive number
+--- @return number
+function Random:nextNumber(minInclusive, maxExclusive)
+```
+
+### `nextGaussian`
+
+Returns a random number drawn from a standard Gaussian (normal) distribution with mean 0 and standard deviation 1. Useful for adding natural-feeling variation.
+
+```lua
+--- @return number
+function Random:nextGaussian()
+```
+
+### `nextBoolean`
+
+Returns `true` or `false` with equal probability.
+
+```lua
+--- @return boolean
+function Random:nextBoolean()
+```
+
+### `nextElement`
+
+Returns a random element from the given table (array portion).
+
+```lua
+--- @param table table
+--- @return any
+function Random:nextElement(table)
+```
+
+### `nextIndex`
+
+Returns a random integer index into the given table (array portion).
+
+```lua
+--- @param table table
+--- @return integer
+function Random:nextIndex(table)
+```
+
+### `shuffle`
+
+Shuffles the elements of the given table in place using a Fisher-Yates algorithm seeded by this generator.
+
+```lua
+--- @param table table
+function Random:shuffle(table)
+```
+
+### `serializeToTable`
+
+Captures the current generator state into a plain Lua table for persistence.
+
+```lua
+--- @return table
+function Random:serializeToTable()
+```
+
+### `serialize`
+
+Captures the current generator state into a `LocalObject` for persistence.
+
+```lua
+--- @return LocalObject
+function Random:serialize()
+```
+
+---
+
+## Static Methods
+
+### `randomSeed`
+
+Returns a fresh random integer that you can pass to `Random.new` to seed a new generator.
+
+```lua
+--- @return integer
+function Random.randomSeed()
+```
+
+### `randomStringSeed`
+
+Returns a fresh random string suitable for use as a string seed.
+
+```lua
+--- @return string
+function Random.randomStringSeed()
+```
+
+### `deserializeFromTable`
+
+Reconstructs a `Random` instance from a table previously produced by `serializeToTable`.
+
+```lua
+--- @param table table
+--- @return Random
+function Random.deserializeFromTable(table)
+```
+
+### `deserialize`
+
+Reconstructs a `Random` instance from a `LocalObject` previously produced by `serialize`.
+
+```lua
+--- @param obj LocalObject
+--- @return Random
+function Random.deserialize(obj)
+```
+
+---
+
+## Usage Examples
+
+### Randomly enabling enemies at spawn
+
+```lua
+local rng = Random.new()
+
+local enemies = { enemy1, enemy2, enemy3, enemy4, enemy5 }
+
+for _, enemy in ipairs(enemies) do
+    -- Each enemy has a 60 % chance to be active at the start
+    enemy.active = rng:nextNumber() < 0.6
+end
+```
+
+### Random dialog choice
+
+```lua
+local rng = Random.new()
+
+local lines = {
+    "The winds carry ill omens today.",
+    "I wouldn't go that way if I were you.",
+    "Have you spoken to the elder yet?",
+    "Strange lights were seen near the ruins last night.",
+}
+
+function OnInteract()
+    local chosen = rng:nextElement(lines)
+    Dialog.show({ text = chosen })
+end
+```
+
+### Shuffling a loot table
+
+```lua
+local rng = Random.new()
+
+local loot = { "sword", "shield", "potion", "gold", "key" }
+rng:shuffle(loot)
+
+-- Give the player the first two items after the shuffle
+giveItem(player, loot[1])
+giveItem(player, loot[2])
+```
+
+### Reproducible generation with a fixed seed
+
+```lua
+-- Using the same seed always produces the same dungeon layout
+local dungeonRng = Random.new("dungeon_floor_7")
+
+local roomCount = dungeonRng:nextInteger(5, 12)
+print("Rooms this floor: " .. tostring(roomCount))
+```
+
+### Saving and restoring generator state
+
+```lua
+-- Capture the state mid-sequence
+local savedState = rng:serializeToTable()
+
+-- … later, restore and continue from the exact same point
+local restoredRng = Random.deserializeFromTable(savedState)
+```

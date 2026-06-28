@@ -1,0 +1,235 @@
+---
+title: "Logger Namespace — RollingQuest Lua Scripting API"
+description: "Reference for the Logger namespace: write plain, info, warning, and error messages to the in-game console with custom colors. Active in editor mode only."
+sidebarTitle: "Logger"
+---
+
+The `Logger` namespace writes messages to the in-game logs console so you can trace script execution, inspect variable values, and diagnose problems without leaving the editor. Every log call is a no-op during normal gameplay — the logger only operates when `Logger.isEnabled` is `true`, which only happens in editor mode.
+
+<Note>
+`Logger.isEnabled` is `false` during regular gameplay. Logging calls are safe to leave in your final script; they will simply be skipped at runtime outside the editor.
+</Note>
+
+---
+
+## Variables
+
+### `Logger.isEnabled`
+
+```lua
+--- static
+---@type boolean
+Logger.isEnabled
+```
+
+`true` only while the level is running inside the editor. Use this flag to guard expensive diagnostic code you never want to run in a published level.
+
+---
+
+## Functions
+
+### `Logger.log`
+
+Writes a message to the console with fully customizable background and foreground colors. The simplest overload accepts only a string; you can optionally pass `Color` values for the background and foreground, or supply a pre-built `Log` object.
+
+```lua
+--- @param message string
+--- @return any
+function Logger.log(message)
+
+--- @param message string
+--- @param backgroundColor Color
+--- @return any
+function Logger.log(message, backgroundColor)
+
+--- @param message string
+--- @param backgroundColor Color
+--- @param foregroundColor Color
+--- @return any
+function Logger.log(message, backgroundColor, foregroundColor)
+
+--- @param log Log
+--- @return any
+function Logger.log(log)
+```
+
+---
+
+### `Logger.info`
+
+Writes an informational message. The console renders it with the standard info style (white text on a neutral background).
+
+```lua
+--- @param message string
+--- @return any
+function Logger.info(message)
+
+--- @param log Log
+--- @return any
+function Logger.info(log)
+```
+
+---
+
+### `Logger.warning`
+
+Writes a warning message. The console renders it with a yellow background so it stands out from normal output.
+
+```lua
+--- @param message string
+--- @return any
+function Logger.warning(message)
+
+--- @param log Log
+--- @return any
+function Logger.warning(log)
+```
+
+---
+
+### `Logger.error`
+
+Writes an error message. The console renders it with a red background to make it immediately visible.
+
+```lua
+--- @param message string
+--- @return any
+function Logger.error(message)
+
+--- @param log Log
+--- @return any
+function Logger.error(log)
+```
+
+---
+
+## Log Class
+
+`Log` is a builder object for rich console messages. You chain methods to compose text with mixed colors and multiple lines, then pass the finished object to any `Logger` function.
+
+### Constructors
+
+```lua
+--- @return Log
+function Log.new()
+
+--- @param text string
+--- @return Log
+function Log.new(text)
+
+--- @param text string
+--- @param backgroundColor Color
+--- @return Log
+function Log.new(text, backgroundColor)
+
+--- @param text string
+--- @param backgroundColor Color
+--- @param foregroundColor Color
+--- @return Log
+function Log.new(text, backgroundColor, foregroundColor)
+```
+
+### Properties
+
+| Property | Type | Writable | Description |
+|---|---|---|---|
+| `log.text` | `string` | Yes | The full text content of the log message. |
+| `log.foregroundColor` | `Color` | Yes | Text color (defaults to white). |
+| `log.backgroundColor` | `Color` | Yes | Background panel color (defaults to black). |
+
+### Methods
+
+All builder methods return the same `Log` instance so you can chain calls.
+
+```lua
+--- @param text string
+--- @return Log
+function Log:append(text)
+
+--- @param text string
+--- @return Log
+function Log:appendLine(text)
+
+--- @return Log
+function Log:appendLine()
+
+--- @param text string
+--- @param color Color
+--- @return Log
+function Log:appendColored(text, color)
+
+--- @param text string
+--- @param color Color
+--- @return Log
+function Log:appendLineColored(text, color)
+
+--- @return Log
+function Log:clearText()
+
+--- @return Log
+function Log:clearBackgroundColor()
+
+--- @return Log
+function Log:clearForegroundColor()
+```
+
+---
+
+## Usage Examples
+
+### Basic diagnostic logging
+
+```lua
+function OnStart()
+    if Logger.isEnabled then
+        Logger.info("Level started. Keys: " .. Level.keysCount)
+        Logger.info("Treasure: " .. Level.treasureCount)
+    end
+end
+```
+
+### Warning and error levels
+
+```lua
+function OnKeyCollected()
+    if Level.remainingKeys == 0 then
+        Logger.info("All keys collected!")
+    elseif Level.remainingKeys < 0 then
+        -- This should never happen — flag it clearly
+        Logger.error("remainingKeys went negative: " .. Level.remainingKeys)
+    else
+        Logger.warning("Keys remaining: " .. Level.remainingKeys)
+    end
+end
+```
+
+### Rich multi-color log with Log builder
+
+```lua
+function OnStart()
+    if not Logger.isEnabled then return end
+
+    local msg = Log.new()
+    msg:appendColored("SCORE ", Color.yellow)
+    msg:append(tostring(Level.playerScore))
+    msg:appendLine()
+    msg:appendColored("LIVES ", Color.cyan)
+    msg:append(tostring(Level.currentLives))
+
+    Logger.log(msg)
+end
+```
+
+### Custom log colors
+
+```lua
+function OnStart()
+    if not Logger.isEnabled then return end
+
+    Logger.log(
+        "Custom teal message",
+        Color.new(0.0, 0.3, 0.3),   -- dark teal background
+        Color.white                  -- white text
+    )
+end
+```

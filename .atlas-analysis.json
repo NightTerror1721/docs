@@ -1,13 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "RollingQuest Lua Scripting",
+  "projectType": "framework",
+  "projectName": "RollingQuest Lua Scripting",
+  "projectDescription": "A Lua scripting system for RollingQuest that lets level creators add custom gameplay behavior to levels and campaigns via an in-game script editor.",
   "theme": "maple",
-  "colors": {
-    "primary": "#7C3AED",
-    "light": "#A78BFA",
-    "dark": "#4C1D95"
-  },
-  "favicon": "/favicon.svg",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#A78BFA",
+  "darkColor": "#4C1D95",
   "navigation": {
     "tabs": [
       {
@@ -94,10 +92,33 @@
       }
     ]
   },
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/NightTerror1721/RollingQuestLuaScripts"
-    }
-  }
+  "keyFeatures": [
+    "Event hooks for balls, blocks, sides, items, enemies, and the level itself",
+    "Signal system for broadcasting messages between scripted entities",
+    "Level namespace for full control over game state, score, lives, and time",
+    "Dialog namespace for showing closeable, temporary, and manual in-game messages",
+    "Flyby/camera scripting for cinematic zoom sequences",
+    "Campaign namespace for reading episode and level progression data",
+    "Elements namespace for tag-based lookup of any entity in the level",
+    "Built-in Logger for debugging scripts inside the level editor",
+    "Projectile creation API with homing, collision callbacks, and custom skins",
+    "Local and global data storage scoped to levels, sections, and campaigns",
+    "OOP helpers: class(), new(), instanceof(), import(), include(), require()"
+  ],
+  "publicApiSurface": [
+    "Hooks: OnSpawn, OnUpdate, OnBallRoll, OnCollect, OnDeath, OnDestroy, OnSignal, OnCustomEvent, SpawnCondition, OnStart, OnWon, OnLost, OnProjectileCollide, OnExit",
+    "Level.completeLevel(), Level.loseLevel(), Level.restartLevel()",
+    "Level.giveScore(), Level.giveLives(), Level.loseLives()",
+    "Level.getBlock(), Level.getBall(), Level.getItems(), Level.getAllBlocksIterator()",
+    "Level.createProjectile(), Level.delayAction()",
+    "Level.activateDarkMode(), Level.deactivateDarkMode()",
+    "Level.saveCheckpoint(), Level.increaseHourglassTime()",
+    "Signals.emit(), Signals.emitToAll(), Signals.emitTo(), Signals.emitToTag()",
+    "Dialog.createCloseable(), Dialog.createTemporary(), Dialog.createManual()",
+    "Flyby.start(), Flyby.startZoomAt()",
+    "Campaign.getEpisode(), Campaign.getNormalLevelByNumber()",
+    "Elements.tagged",
+    "Logger.log(), Logger.info(), Logger.warning(), Logger.error()",
+    "class(), new(), instanceof(), import(), include(), require()"
+  ]
 }

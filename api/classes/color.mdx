@@ -1,0 +1,155 @@
+---
+title: "Color — RGBA Color Values for RollingQuest Scripts"
+description: "Reference for the Color class in RollingQuest Lua scripts. Covers RGBA constructors, grayscale shortcuts, static color constants, lerp blending, and usage with the Dialog namespace."
+sidebarTitle: "Color"
+---
+
+The `Color` class represents an RGBA color value where each channel (`r`, `g`, `b`, `a`) is a floating-point number in the range `0` to `1`. You use `Color` whenever you need to tint objects, set dialog backgrounds, drive visual effects, or blend between two colors over time. RollingQuest also provides a collection of pre-built static colors — like `Color.red` and `Color.white` — so you don't have to remember the exact component values for common colors. All component properties are read-only after construction; create a new `Color` to change a value.
+
+## Constructors
+
+```lua
+-- Full RGBA
+local red  = Color.new(1, 0, 0, 1)
+
+-- RGB only — alpha defaults to fully opaque (1)
+local blue = Color.new(0, 0, 1)
+
+-- Grayscale — all three channels are set to the same value
+local mid  = Color.new(0.5)
+
+-- Grayscale with explicit alpha
+local fog  = Color.new(0.8, 0.4)
+
+-- No arguments — returns black (0, 0, 0, 0)
+local blank = Color.new()
+```
+
+| Signature | Description |
+|---|---|
+| `Color.new(r, g, b, a)` | Creates a color with explicit red, green, blue, and alpha values. |
+| `Color.new(r, g, b)` | Creates a color with the given channels; alpha is `1` (fully opaque). |
+| `Color.new(grayscale)` | Sets R, G, and B to `grayscale`; alpha is `1`. |
+| `Color.new(grayscale, alpha)` | Sets R, G, and B to `grayscale` with the given alpha. |
+| `Color.new()` | Returns a transparent black `(0, 0, 0, 0)`. |
+
+---
+
+## Instance Properties
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `r` | `number` | Yes | The red channel (0–1). |
+| `g` | `number` | Yes | The green channel (0–1). |
+| `b` | `number` | Yes | The blue channel (0–1). |
+| `a` | `number` | Yes | The alpha (opacity) channel (0–1). |
+| `grayscale` | `number` | Yes | The perceptual grayscale value of the color. |
+| `maxColorComponent` | `number` | Yes | The highest value among R, G, and B. |
+| `linear` | `Color` | Yes | This color converted to linear color space. |
+| `gamma` | `Color` | Yes | This color converted to gamma color space. |
+
+You can also index a `Color` by integer (`c[1]` → R, `c[2]` → G, `c[3]` → B, `c[4]` → A) for both read and write access.
+
+---
+
+## Static Color Constants
+
+These pre-built colors are available without constructing anything.
+
+| Constant | RGBA |
+|---|---|
+| `Color.red` | `(1, 0, 0, 1)` |
+| `Color.green` | `(0, 1, 0, 1)` |
+| `Color.blue` | `(0, 0, 1, 1)` |
+| `Color.white` | `(1, 1, 1, 1)` |
+| `Color.black` | `(0, 0, 0, 1)` |
+| `Color.yellow` | `(1, 0.92, 0.016, 1)` |
+| `Color.cyan` | `(0, 1, 1, 1)` |
+| `Color.magenta` | `(1, 0, 1, 1)` |
+| `Color.gray` | `(0.5, 0.5, 0.5, 1)` |
+| `Color.grey` | Alias for `Color.gray`. |
+| `Color.clear` | `(0, 0, 0, 0)` — fully transparent. |
+
+---
+
+## Static Methods
+
+### `lerp`
+
+Linearly interpolates between color `a` and color `b` by the clamped factor `t` (0 → `a`, 1 → `b`). Each channel is interpolated independently.
+
+```lua
+--- @param a Color
+--- @param b Color
+--- @param t number
+--- @return Color
+function Color.lerp(a, b, t)
+```
+
+### `lerpUnclamped`
+
+Same as `lerp` but `t` is not clamped, allowing extrapolation beyond the two endpoints.
+
+```lua
+--- @param a Color
+--- @param b Color
+--- @param t number
+--- @return Color
+function Color.lerpUnclamped(a, b, t)
+```
+
+---
+
+## Usage Examples
+
+### Creating custom colors
+
+```lua
+-- A semi-transparent orange
+local orange = Color.new(1.0, 0.5, 0.0, 0.75)
+
+-- Pure white (shorthand via static constant)
+local white = Color.white
+
+-- A dark gray using the grayscale constructor
+local darkGray = Color.new(0.2)
+```
+
+### Blending between two colors over time
+
+```lua
+local t = 0
+
+function OnUpdate(delta)
+    t = t + delta * 0.5   -- takes 2 seconds to blend fully
+    if t > 1 then t = 1 end
+
+    local blended = Color.lerp(Color.blue, Color.red, t)
+    self.renderer.color = blended
+end
+```
+
+### Using a Color with the Dialog namespace
+
+Pass a `Color` value as the background parameter when showing a dialog so your UI fits the scene's mood.
+
+```lua
+local bgColor = Color.new(0.1, 0.05, 0.2, 0.9)  -- deep purple, slightly transparent
+
+Dialog.show({
+    text       = "A mysterious voice whispers from the dark...",
+    background = bgColor,
+    textColor  = Color.white,
+})
+```
+
+### Reading individual channels
+
+```lua
+local c = Color.new(0.8, 0.3, 0.1, 1.0)
+
+print("Red:   " .. tostring(c.r))         -- 0.8
+print("Green: " .. tostring(c.g))         -- 0.3
+print("Blue:  " .. tostring(c.b))         -- 0.1
+print("Gray:  " .. tostring(c.grayscale)) -- perceptual average
+```

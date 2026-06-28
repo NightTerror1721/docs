@@ -1,0 +1,183 @@
+---
+title: "Looking Up Entities with the Elements Namespace"
+description: "Use Elements.tagged to find any entity in the level by its tag, then cast it to the right type to call methods on it."
+sidebarTitle: "Elements"
+---
+
+Every entity in a RollingQuest level — blocks, sides, items, enemies, balls, and decorations — can be given a **tag** in the level editor. Tags let your scripts look up specific entities by name at runtime, without hard-coded IDs or fragile index-based lookups. The `Elements.tagged` table is the single entry point for all tag-based entity access.
+
+## Setting Tags in the Level Editor
+
+Open the properties panel for any entity in the editor and fill in its **Tag** field. Tags are free-form strings — choose names that describe the entity's role in your level design (for example `"exit-door"`, `"spawn-trigger"`, or `"collectible-key"`).
+
+<Note>
+Multiple entities can share the same tag. When you look up a tag that more than one entity uses, `Elements.tagged` gives you a table of all matching entities instead of a single value.
+</Note>
+
+---
+
+## The `Elements.tagged` Table
+
+```lua
+--- static, read-only
+---@type table<string, any>
+Elements.tagged
+```
+
+`Elements.tagged` is a read-only table indexed by tag strings. Each value is either:
+
+- **A single entity** — when only one entity in the level has that tag.
+- **A table of entities** — when multiple entities share that tag.
+
+Because the game can return different value shapes, always check what you have before using it.
+
+---
+
+## Getting a Single Entity by Tag
+
+When you know exactly one entity carries a tag, index `Elements.tagged` directly:
+
+```lua
+local rawEntity = Elements.tagged["exit-door"]
+```
+
+The value you get back is a generic element. To call type-specific methods (like `block:enable()` or `enemy:kill()`), cast it first using one of the `as*()` methods available on every entity.
+
+### Cast Methods
+
+| Method | Returns |
+|--------|---------|
+| `entity:asBlock()` | `Block` |
+| `entity:asBall()` | `Ball` |
+| `entity:asSide()` | `Side` |
+| `entity:asItem()` | `Item` |
+| `entity:asEnemy()` | `Enemy` |
+| `entity:asDecoration()` | `Decoration` |
+| `entity:asLevel()` | `Level` |
+
+```lua
+-- Get the block tagged "exit-door" and disable it
+local door = Elements.tagged["exit-door"]:asBlock()
+door:disable()
+```
+
+<Warning>
+Calling the wrong cast method throws a runtime error. Use `entity.type` to inspect the `EntityType` of an unknown element before casting if you are unsure.
+</Warning>
+
+---
+
+## Working with Multiple Entities Sharing a Tag
+
+When several entities share a tag, `Elements.tagged["my-tag"]` returns a table. Iterate it with a numeric `for` loop:
+
+```lua
+local enemies = Elements.tagged["wave-1-enemies"]
+if type(enemies) == "table" then
+    for i = 1, #enemies do
+        enemies[i]:asEnemy():kill()
+    end
+end
+```
+
+<Tip>
+A safe pattern is to always wrap the result in a table check, so your code handles both the single-entity and multi-entity cases gracefully.
+</Tip>
+
+```lua
+local function getAll(tag)
+    local result = Elements.tagged[tag]
+    if result == nil then
+        return {}
+    elseif type(result) == "table" then
+        return result
+    else
+        return { result }
+    end
+end
+
+-- Now you can always iterate safely
+for _, entity in ipairs(getAll("pressure-plates")) do
+    local side = entity:asSide()
+    print("Side face: " .. side.faceName)
+end
+```
+
+---
+
+## Entity Types
+
+The following entity types can all be found via `Elements.tagged`:
+
+| Type | Cast method | Key properties |
+|------|-------------|----------------|
+| `Ball` | `:asBall()` | `position`, `isAlive`, `slowMode`, `mirrorMode` |
+| `Block` | `:asBlock()` | `slot`, `upSide`…`backSide`, `intangible`, `isMoving` |
+| `Side` | `:asSide()` | `face`, `block`, `normalVector`, `hasItem` |
+| `Item` | `:asItem()` | `isTreasure`, `isKey`, `isFruit`, `isEnabled` |
+| `Enemy` | `:asEnemy()` | `currentGroundSide`, `position` |
+| `Decoration` | `:asDecoration()` | (decoration-specific properties) |
+
+---
+
+## Practical Examples
+
+### Get a block and toggle it
+
+```lua
+---@param self Level
+function OnStart(self)
+    local gate = Elements.tagged["north-gate"]:asBlock()
+    gate:disable()  -- start the gate open
+end
+```
+
+### Read a ball's position on level start
+
+```lua
+---@param self Level
+function OnStart(self)
+    local ball = Elements.tagged["player-ball"]:asBall()
+    print("Ball starts at: " .. tostring(ball.position))
+end
+```
+
+### Iterate all enemies with a shared tag
+
+```lua
+---@param self Level
+function OnStart(self)
+    local rawResult = Elements.tagged["patrol-enemies"]
+    local list = type(rawResult) == "table" and rawResult or { rawResult }
+
+    for _, entity in ipairs(list) do
+        local enemy = entity:asEnemy()
+        enemy:disable()  -- start all patrol enemies inactive
+        print("Disabled enemy: " .. enemy.name)
+    end
+end
+```
+
+### Collect all items tagged "bonus-coin"
+
+```lua
+-- Item script: signal a level-script counter every time this item is collected
+---@param self Item
+---@param ball Ball
+function OnCollect(self, ball)
+    Signals.emitToTag("CoinCollected", "level-controller", { value = 10 })
+end
+```
+
+---
+
+## Checking Whether a Tag Exists
+
+`Elements.tagged` returns `nil` for tags that no entity in the level uses. Always guard lookups when the tag might not be present:
+
+```lua
+local secret = Elements.tagged["secret-chest"]
+if secret ~= nil then
+    secret:asItem():enable()
+end
+```

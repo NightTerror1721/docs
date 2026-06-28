@@ -1,0 +1,49 @@
+---
+title: "EntityType Enum Reference for RollingQuest Scripts"
+description: "Complete reference for the EntityType enum, which identifies the category of any in-game entity in RollingQuest Lua scripts."
+sidebarTitle: "EntityType"
+---
+
+The `EntityType` enum classifies every object in a RollingQuest level into one of eight categories. You pass these values wherever the API needs to know what kind of entity you are targeting — for example, when broadcasting a signal to all entities of a particular class with `Signals.emitToType()`, or when filtering callbacks that fire for multiple entity kinds. The special value `Any` acts as a wildcard that matches every category at once.
+
+## Values
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `EntityType.Level` | `0` | The level itself, treated as a single top-level entity. |
+| `EntityType.Block` | `1` | A static or dynamic block that makes up the level geometry. |
+| `EntityType.Side` | `2` | An individual face or side element attached to a block. |
+| `EntityType.Item` | `3` | A collectible item placed in the level. |
+| `EntityType.Enemy` | `4` | An enemy character that can interact with the ball. |
+| `EntityType.Ball` | `5` | The player-controlled ball entity. |
+| `EntityType.Decoration` | `6` | A purely visual decoration object with no gameplay logic. |
+| `EntityType.Any` | `-1` | Wildcard — matches all entity types in filtering and signal APIs. |
+
+## Usage Example
+
+The example below shows how you can send a signal to every `Block` entity in the level, then separately send a different signal to every `Enemy`, and finally use `Any` to broadcast to all entities at once.
+
+```lua
+-- Emit a signal to all blocks in the level
+Signals.emitToType(EntityType.Block, "onLevelStart")
+
+-- Emit a signal to all enemies
+Signals.emitToType(EntityType.Enemy, "onAlertEnemies")
+
+-- Emit a signal to every entity regardless of type
+Signals.emitToType(EntityType.Any, "onReset")
+```
+
+You can also read the type of a specific entity at runtime and branch on it:
+
+```lua
+local function handleEntity(entity)
+    if entity:getType() == EntityType.Item then
+        -- collect the item
+        entity:collect()
+    elseif entity:getType() == EntityType.Enemy then
+        -- stun the enemy
+        entity:stun()
+    end
+end
+```

@@ -1,0 +1,53 @@
+---
+title: "Face Enum Reference for RollingQuest Scripts"
+description: "Complete reference for the Face enum, which identifies one of the six sides of a block cube in RollingQuest Lua scripts."
+sidebarTitle: "Face"
+---
+
+The `Face` enum identifies one of the six sides of a block cube in the RollingQuest world. Every block is an axis-aligned cube, so exactly six faces exist: `Up`, `Down`, `Left`, `Right`, `Front`, and `Back`. You supply a `Face` value wherever the API targets a specific side of a block — for instance, when positioning the camera zoom-in effect with `Flyby.startZoomAt()`, or when querying or modifying the texture and properties of individual block faces.
+
+## Values
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `Face.Up` | `0` | The top face of the cube, facing upward along the vertical axis. |
+| `Face.Down` | `1` | The bottom face of the cube, facing downward along the vertical axis. |
+| `Face.Left` | `2` | The left face of the cube relative to the block's local orientation. |
+| `Face.Right` | `3` | The right face of the cube relative to the block's local orientation. |
+| `Face.Front` | `4` | The front face of the cube, the side facing toward the camera's default view. |
+| `Face.Back` | `5` | The back face of the cube, opposite to the front face. |
+
+## Usage Example
+
+The example below starts a flyby zoom aimed at the top face of a specific block, then demonstrates checking the landing face of the ball after a move event.
+
+```lua
+-- Start a zoom-in flyby focused on the Up face of block "startBlock"
+Flyby.startZoomAt("startBlock", Face.Up, 2.0)
+```
+
+You can also use `Face` values when iterating over all sides of a block to apply a texture or check a property:
+
+```lua
+local faces = { Face.Up, Face.Down, Face.Left, Face.Right, Face.Front, Face.Back }
+
+for _, face in ipairs(faces) do
+    if block:getFaceTexture(face) == "ice" then
+        block:setFaceTexture(face, "normal")
+    end
+end
+```
+
+When the ball lands on a block, the collision callback typically reports which face was hit, letting you respond differently depending on whether the ball rolled onto the top, slid into a side, or struck the bottom:
+
+```lua
+function onBallLand(face)
+    if face == Face.Up then
+        -- normal landing on top
+        playSound("land")
+    elseif face == Face.Down then
+        -- ball hit the underside
+        playSound("thud")
+    end
+end
+```

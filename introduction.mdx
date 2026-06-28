@@ -1,0 +1,67 @@
+---
+title: "RollingQuest Lua Scripting System"
+description: "Add custom gameplay logic to your RollingQuest levels using the built-in Lua scripting system — no engine modifications needed."
+sidebarTitle: "Introduction"
+---
+
+The RollingQuest scripting system lets you extend any level you build with custom gameplay logic written in Lua. You attach scripts directly to game entities — the level itself, individual blocks, sides, items, enemies, and balls — and the game automatically calls specific functions in those scripts whenever something interesting happens. Whether you want to show a welcome message when a level starts, destroy a block when the ball rolls over it, or build an elaborate sequence of events triggered by signals, scripts are how you make it happen.
+
+## What you can do
+
+The scripting API gives you control over many parts of the game:
+
+- **Hooks** — React to game events (level start, ball death, item collected, projectile hit, and more) by defining named functions the engine calls automatically.
+- **Signals** — Send named messages between scripts attached to different entities, so one entity's script can trigger behavior in another.
+- **Level control** — Complete or fail the level, manage lives and score, manipulate the hourglass timer, save checkpoints, and query game state through the `Level` namespace.
+- **Dialog** — Display on-screen messages using `Dialog.createTemporary`, `Dialog.createCloseable`, or `Dialog.createManual` for full control over when messages appear and disappear.
+- **Projectiles** — Spawn and configure projectiles at runtime with `Level.createProjectile`, complete with custom speed, homing behavior, and collision callbacks.
+- **Flyby camera** — Script cinematic fly-through sequences that play when the level loads.
+- **Campaign data** — Read and write persistent data across levels in a campaign using `Level.campaignGlobalData`.
+- **Element lookup** — Find any block, ball, item, enemy, or decoration in the level by position, tag, or index using `Level.getBlock`, `Level.getBalls`, and related functions.
+- **Data storage** — Store per-entity values between hook calls using `localData` on any entity.
+- **OOP helpers** — Define your own Lua classes with `class()`, `new()`, and `instanceof()` for more structured scripting.
+
+## Where to start
+
+<CardGroup cols={2}>
+  <Card title="Lua Basics" icon="code" href="/lua-basics">
+    New to programming? Start here for a gentle introduction to the Lua language.
+  </Card>
+  <Card title="Script Editor" icon="pen-to-square" href="/script-editor">
+    Learn how to open the built-in editor, attach scripts to entities, and run your first script.
+  </Card>
+  <Card title="Hooks" icon="webhook" href="/concepts/hooks">
+    Understand how hooks work and which events each entity type exposes.
+  </Card>
+  <Card title="Signals" icon="tower-broadcast" href="/concepts/signals">
+    Learn how to send messages between scripts on different entities.
+  </Card>
+  <Card title="Dialog Messages" icon="message" href="/recipes/dialog-messages">
+    Show temporary, closeable, and manually controlled messages in your levels.
+  </Card>
+  <Card title="Level Namespace" icon="gamepad-2" href="/api/namespaces/level">
+    Full API reference for the Level namespace — the central hub for game-state control.
+  </Card>
+</CardGroup>
+
+## How it works
+
+The scripting system is built around three ideas that work together.
+
+**Scripts are attached to entities.** Every game entity — the level, a block, a side, an item, an enemy, a ball — can have its own Lua script file. Scripts are independent of each other by default, which keeps things tidy as your level grows.
+
+**The game calls hook functions automatically.** Inside each script you define functions with specific names, called *hooks*. When the corresponding event happens in the game, the engine finds your function and calls it, passing the relevant entity as the first argument. For example, if you define `OnStart` in a level script, the engine calls it the moment the level begins:
+
+```lua
+function OnStart(self)
+  Dialog.createTemporary("Welcome to my level!", 3)
+end
+```
+
+You don't need to register or connect anything — just give the function the right name and the engine does the rest.
+
+**Scripts call API namespaces to affect the game.** Beyond reacting to events, your scripts can actively change the game. Namespaces like `Level`, `Dialog`, and `Logger` are available as global tables in every script. Call their functions to query or modify game state, display messages, spawn projectiles, and more.
+
+<Tip>
+  You don't need any programming experience to get started. The [Lua Basics](/lua-basics) page walks through everything you need to know about the language from the ground up before you write your first hook.
+</Tip>

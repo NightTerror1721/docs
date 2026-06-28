@@ -1,0 +1,204 @@
+---
+title: "Projectile — Projectile Entity API Reference"
+description: "API reference for Projectile and ProjectileRequest in RollingQuest Lua scripting. Fire, explode, and configure homing, lifetime, speed, and collisions."
+sidebarTitle: "Projectile"
+---
+
+The `Projectile` class represents a single in-flight projectile in RollingQuest. You create projectiles by calling `LevelSection:createProjectile()` with either a `ProjectileRequest` object or an inline property table. Once created, a `Projectile` lets you read and write its physics parameters, control its collision behaviour, and hook into fire, explode, and update events. The companion `ProjectileRequest` class is the recommended way to configure a projectile before launch.
+
+## Projectile
+
+### Properties
+
+#### Identity
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `skin` | `string` | ✅ | Visual skin identifier of the projectile. |
+| `isActive` | `boolean` | ✅ | `true` while the projectile is in flight. |
+| `section` | `string` | ✅ | ID of the section whose projectile pool owns this instance. |
+| `isHoming` | `boolean` | ✅ | `true` when `homingStrength > 0`. |
+
+#### Transform
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `position` | `Vector3` | ❌ | Current world-space position. |
+| `rotation` | `Quaternion` | ❌ | Current world-space rotation. |
+| `forward` | `Vector3` | ✅ | Normalised forward direction derived from `rotation`. |
+| `velocity` | `Vector3` | ✅ | Current velocity vector. |
+| `angularVelocity` | `number` | ✅ | Current angular velocity (read-only derived value). |
+
+#### Movement
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `lifetime` | `number` | ❌ | Remaining lifetime in seconds before the projectile auto-expires. |
+| `speed` | `number` | ❌ | Linear speed along the forward axis. |
+| `acceleration` | `number` | ❌ | Rate of change of `speed` per second. |
+| `angularSpeed` | `number` | ❌ | Rotational speed around the local axis. |
+| `angularAcceleration` | `number` | ❌ | Rate of change of `angularSpeed` per second. |
+| `angularLocalAxisRotation` | `Vector3` | ❌ | Local axis around which angular rotation is applied. |
+| `homingStrength` | `number` | ❌ | Strength of the steering force toward the nearest ball. |
+| `maxHomingRange` | `number` | ❌ | Maximum distance at which homing tracking activates. |
+
+#### Collision Behaviour
+
+| Property | Type | Read-only | Description |
+|---|---|---|---|
+| `explodeOnCollideWithBlocks` | `boolean` | ❌ | Detonate when hitting a block side. |
+| `explodeOnCollideWithItems` | `boolean` | ❌ | Detonate when hitting an item. |
+| `explodeOnCollideWithEnemies` | `boolean` | ❌ | Detonate when hitting an enemy. |
+| `explodeOnCollideWithBalls` | `boolean` | ❌ | Detonate when hitting a ball. |
+| `explodeOnCollideWithDecorations` | `boolean` | ❌ | Detonate when hitting a decoration. |
+
+### Methods
+
+#### fire
+
+Launch the projectile. Six overloads give you control over the starting position, rotation, and speed:
+
+```lua
+function Projectile:fire()
+
+--- @param initialSpeed number
+function Projectile:fire(initialSpeed)
+
+--- @param position Vector3
+function Projectile:fire(position)
+
+--- @param rotation Quaternion
+function Projectile:fire(rotation)
+
+--- @param position Vector3
+--- @param rotation Quaternion
+function Projectile:fire(position, rotation)
+
+--- @param position Vector3
+--- @param rotation Quaternion
+--- @param initialSpeed number
+function Projectile:fire(position, rotation, initialSpeed)
+```
+
+#### explode
+
+Detonate the projectile immediately:
+
+```lua
+function Projectile:explode()
+
+--- @param rotation Quaternion
+function Projectile:explode(rotation)
+```
+
+#### Event callbacks
+
+You can attach Lua functions to three lifecycle events after creation:
+
+```lua
+--- @param event function
+function Projectile:setOnFireEvent(event)
+
+--- @param event function
+function Projectile:setOnExplodeEvent(event)
+
+--- @param event function  -- receives (projectile, deltaTime)
+function Projectile:setOnUpdateEvent(event)
+```
+
+---
+
+## ProjectileRequest
+
+`ProjectileRequest` is a configuration object you build before calling `LevelSection:createProjectile()`. Using it keeps your creation code readable and gives you access to all properties in one place.
+
+### Static Constructor
+
+Three overloads create a new request:
+
+```lua
+--- @return ProjectileRequest
+function ProjectileRequest.new()
+
+--- @param skin string
+--- @return ProjectileRequest
+function ProjectileRequest.new(skin)
+
+--- @param skin string
+--- @param origin Vector3
+--- @param rotation Quaternion
+--- @return ProjectileRequest
+function ProjectileRequest.new(skin, origin, rotation)
+```
+
+### Properties
+
+All `ProjectileRequest` properties are read/write.
+
+| Property | Type | Description |
+|---|---|---|
+| `skin` | `string` | Visual skin identifier. |
+| `origin` | `Vector3` | World-space spawn position. |
+| `rotation` | `Quaternion` | Initial rotation at spawn. |
+| `tag` | `string` | Optional tag for lookup or categorisation. |
+| `power` | `integer` | Damage power of the projectile. |
+| `lifetime` | `number` | Duration in seconds before auto-expiry. |
+| `speed` | `number` | Initial linear speed. |
+| `acceleration` | `number` | Rate of speed change per second. |
+| `homingStrength` | `number` | Steering strength toward the nearest ball. |
+| `maxHomingRange` | `number` | Maximum homing detection range. |
+| `autoFire` | `boolean` | When `true` the projectile fires immediately on creation. |
+| `explodeOnCollideWithBlocks` | `boolean` | Detonate on block collision. |
+| `explodeOnCollideWithItems` | `boolean` | Detonate on item collision. |
+| `explodeOnCollideWithEnemies` | `boolean` | Detonate on enemy collision. |
+| `explodeOnCollideWithBalls` | `boolean` | Detonate on ball collision. |
+| `explodeOnCollideWithDecorations` | `boolean` | Detonate on decoration collision. |
+| `explodeOnCollideWithProjectiles` | `boolean` | Detonate on projectile collision. |
+| `onFire` | `fun(projectile: Projectile): void` | Callback invoked when the projectile fires. |
+| `onExplode` | `fun(projectile: Projectile): void` | Callback invoked when the projectile explodes. |
+| `onUpdate` | `fun(projectile: Projectile, deltaTime: number): void` | Callback invoked every update tick. |
+
+---
+
+## Creating and Firing a Projectile
+
+You create a projectile through the `LevelSection` object. The example below fires a homing projectile from a side each time the ball rolls onto it:
+
+```lua
+function OnBallRoll(self, ball)
+    -- self is a Side
+    local section = Level.getSection(self.section)
+
+    -- Build the request
+    local req = ProjectileRequest.new("plasma_bolt", self.centerPosition, self.rotation)
+    req.speed            = 8.0
+    req.lifetime         = 5.0
+    req.homingStrength   = 2.5
+    req.maxHomingRange   = 20.0
+    req.explodeOnCollideWithBalls = true
+    req.autoFire         = false
+
+    -- Attach a callback that logs the explosion
+    req.onExplode = function(proj)
+        Log.info("Projectile exploded at " .. proj.position.x .. "," .. proj.position.y)
+    end
+
+    -- Create the projectile and fire it manually
+    local proj = section:createProjectile(req)
+    proj:fire(self.centerPosition, self.rotation, 10.0)
+end
+```
+
+You can also use the inline table overload for concise one-liners:
+
+```lua
+local proj = section:createProjectile({
+    skin     = "fireball",
+    origin   = self.centerPosition,
+    rotation = self.rotation,
+    speed    = 12.0,
+    lifetime = 3.0,
+    autoFire = true,
+    explodeOnCollideWithBalls = true,
+})
+```

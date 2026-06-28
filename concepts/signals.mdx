@@ -1,0 +1,273 @@
+---
+title: "Script Communication with Signals"
+description: "Learn how to send messages between entities in RollingQuest using the Signals namespace and the OnSignal hook."
+sidebarTitle: "Signals"
+---
+
+Signals are the primary way for scripts to talk to each other. When one entity needs to notify another — a pressure plate that opens a door, a trigger block that wakes up a sleeping enemy — you emit a signal by name, and every entity whose `OnSignal` hook matches that name can respond. Signals can carry any Lua value as a payload, so you can pass numbers, strings, tables, or even nothing at all.
+
+## Receiving a Signal: The `OnSignal` Hook
+
+To make an entity respond to a signal, define `OnSignal` in its script. The game calls this function whenever a signal is delivered to that entity.
+
+```lua
+---@param self Block
+---@param signal Signal
+function OnSignal(self, signal)
+    if signal.id == "Activate" then
+        self:enable()
+    elseif signal.id == "Deactivate" then
+        self:disable()
+    end
+end
+```
+
+### The `Signal` Object
+
+The `signal` parameter gives you everything you need to act on the incoming message:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `signal.id` | `string` | The name of the signal — use this to tell signals apart. |
+| `signal.data` | `any` | Optional payload; can be a number, string, table, or `nil`. |
+| `signal.target` | `Element` | The specific entity this signal was addressed to (if any). |
+| `signal.tagFilter` | `string` | The tag filter used when emitting (if any). |
+| `signal.typeFilter` | `EntityType` | The entity-type filter used when emitting. |
+| `signal.customFilter` | `function` | The custom filter function used when emitting (if any). |
+
+You can create a `Signal` object manually if you need full control over filtering:
+
+```lua
+local sig = Signal.new{
+    id         = "OpenDoor",
+    data       = { doorId = "north-gate" },
+    tagFilter  = "doors",
+    typeFilter = EntityType.Block,
+}
+Signals.emit(sig)
+```
+
+---
+
+## Emitting Signals: The `Signals` Namespace
+
+The `Signals` namespace provides several functions that let you target signals precisely — from a broadcast to every entity in the level down to a single named entity.
+
+### `Signals.emit(signal)`
+
+Emits a pre-built `Signal` object, respecting whatever filters are set on it.
+
+```lua
+--- @param signal Signal
+Signals.emit(signal)
+
+--- @param signalProperties table
+Signals.emit(signalProperties)  -- shorthand table form
+```
+
+Use the table shorthand when you want a quick one-liner:
+
+```lua
+Signals.emit{ id = "Explode", data = { radius = 3 } }
+```
+
+---
+
+### `Signals.emitToAll(signalId [, data])`
+
+Broadcasts a signal to **every** entity in the level.
+
+```lua
+--- @param signalId string
+--- @param data any   -- optional
+Signals.emitToAll(signalId, data)
+```
+
+```lua
+-- Wake up everything
+Signals.emitToAll("WakeUp")
+
+-- Send a damage value to all entities
+Signals.emitToAll("TakeDamage", { amount = 10 })
+```
+
+---
+
+### `Signals.emitTo(signalId, target [, data])`
+
+Sends a signal to one specific entity.
+
+```lua
+--- @param signalId string
+--- @param target Element
+--- @param data any        -- optional
+Signals.emitTo(signalId, target, data)
+```
+
+```lua
+-- Tell a specific block to open
+local door = Elements.tagged["north-door"]:asBlock()
+Signals.emitTo("Open", door)
+```
+
+---
+
+### `Signals.emitToTag(signalId, tag [, data])`
+
+Sends a signal to all entities that share a given tag.
+
+```lua
+--- @param signalId string
+--- @param tag string
+--- @param data any   -- optional
+Signals.emitToTag(signalId, tag, data)
+```
+
+```lua
+-- Toggle every entity tagged "light-fixture"
+Signals.emitToTag("Toggle", "light-fixture")
+```
+
+---
+
+### `Signals.emitToType(signalId, type [, data])`
+
+Sends a signal to all entities of a specific `EntityType`.
+
+```lua
+--- @param signalId string
+--- @param type EntityType
+--- @param data any          -- optional
+Signals.emitToType(signalId, type, data)
+```
+
+```lua
+-- Freeze every enemy in the level
+Signals.emitToType("Freeze", EntityType.Enemy)
+```
+
+---
+
+### `Signals.emitToTypeAndTag(signalId, type, tag [, data])`
+
+Sends a signal to all entities that match **both** a type and a tag — the most precise broadcast filter.
+
+```lua
+--- @param signalId string
+--- @param type EntityType
+--- @param tag string
+--- @param data any          -- optional
+Signals.emitToTypeAndTag(signalId, type, tag, data)
+```
+
+```lua
+-- Only target blocks tagged "trap"
+Signals.emitToTypeAndTag("Arm", EntityType.Block, "trap")
+```
+
+---
+
+### `Signals.emitToCustom(signalId, customFilter [, data])`
+
+Sends a signal to every entity for which `customFilter` returns `true`. The filter receives the entity and the signal as arguments.
+
+```lua
+--- @param signalId string
+--- @param customFilter function
+--- @param data any              -- optional
+Signals.emitToCustom(signalId, customFilter, data)
+```
+
+```lua
+-- Only signal blocks that are currently moving
+Signals.emitToCustom("Stop", function(entity, signal)
+    if entity.type == EntityType.Block then
+        return entity:asBlock().isMoving
+    end
+    return false
+end)
+```
+
+---
+
+## Signal Data
+
+The `data` field accepts any Lua value — a plain boolean, a number, a string, or a full table with nested fields.
+
+```lua
+-- Sending structured data
+Signals.emitToTag("Configure", "spawners", {
+    count    = 3,
+    interval = 2.0,
+    active   = true,
+})
+```
+
+On the receiving side, read it back from `signal.data`:
+
+```lua
+function OnSignal(self, signal)
+    if signal.id == "Configure" then
+        local cfg = signal.data
+        print("Spawning " .. cfg.count .. " enemies every " .. cfg.interval .. "s")
+    end
+end
+```
+
+<Note>
+If you emit a signal without a `data` argument, `signal.data` will be `nil` on the receiving end. Always guard with a nil check if the field is optional.
+</Note>
+
+---
+
+## Full Example: Pressure Plate and Gate
+
+The following two scripts work together. A **Side** script acts as a pressure plate: when the ball rolls on, it emits a signal. A **Block** script on a gate block listens for that signal and toggles itself.
+
+<CodeGroup>
+
+```lua Pressure Plate (Side script)
+-- Side script attached to the pressure-plate tile
+-- Emits "PressurePlate_On" when the ball rolls on and
+-- "PressurePlate_Off" when it rolls off.
+
+---@param self Side
+---@param rollIn boolean
+---@param ball Ball
+function OnBallRoll(self, rollIn, ball)
+    if rollIn then
+        Signals.emitToTag("PressurePlate_On", "gate-block")
+    else
+        Signals.emitToTag("PressurePlate_Off", "gate-block")
+    end
+end
+```
+
+```lua Gate Block (Block script)
+-- Block script attached to the gate (tagged "gate-block")
+-- Enables or disables itself in response to the pressure plate.
+
+---@param self Block
+function OnSpawn(self)
+    -- Start enabled (solid)
+    self:enable()
+end
+
+---@param self Block
+---@param signal Signal
+function OnSignal(self, signal)
+    if signal.id == "PressurePlate_On" then
+        -- Ball is on the plate — open the gate
+        self:disable()
+    elseif signal.id == "PressurePlate_Off" then
+        -- Ball left the plate — close the gate
+        self:enable()
+    end
+end
+```
+
+</CodeGroup>
+
+<Tip>
+Use tag-based emission (`Signals.emitToTag`) when you want to control multiple entities at once without keeping references to each one individually.
+</Tip>

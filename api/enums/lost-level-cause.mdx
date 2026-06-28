@@ -1,0 +1,50 @@
+---
+title: "LostLevelCause Enum Reference for RollingQuest Scripts"
+description: "Complete reference for the LostLevelCause enum, covering all twelve reasons a player can fail a level in RollingQuest Lua scripts."
+sidebarTitle: "LostLevelCause"
+---
+
+The `LostLevelCause` enum describes every way a player can fail a RollingQuest level. You pass one of these values to `Level.loseLevel(cause)` to trigger a level-failure sequence with the appropriate feedback — the cause drives the failure animation, sound, and message shown to the player. Picking the most accurate cause keeps the player experience consistent with the rest of the game and makes your custom triggers feel native to the engine.
+
+## Values
+
+| Value | Number | Description |
+| --- | --- | --- |
+| `LostLevelCause.FellOff` | `0` | The ball rolled off the edge of the level into the void. |
+| `LostLevelCause.TimeOut` | `1` | The level timer reached zero before the player finished. |
+| `LostLevelCause.Spiked` | `2` | The ball was impaled on a spike hazard. |
+| `LostLevelCause.Burned` | `3` | The ball was destroyed by a fire hazard. |
+| `LostLevelCause.Captured` | `4` | The ball was caught by an enemy. |
+| `LostLevelCause.InsideBlock` | `5` | The ball ended up inside solid geometry with no way out. |
+| `LostLevelCause.Lasered` | `6` | The ball was hit by a laser beam. |
+| `LostLevelCause.Poisoned` | `7` | The ball was poisoned and could not recover. |
+| `LostLevelCause.InfiniteJumpLoop` | `8` | The ball entered an unresolvable infinite jump loop. |
+| `LostLevelCause.Telefragged` | `9` | The ball teleported into a solid object and was destroyed. |
+| `LostLevelCause.LostBalls` | `10` | All available balls were lost before the level was completed. |
+| `LostLevelCause.Electrocuted` | `11` | The ball was destroyed by an electric hazard. |
+
+## Usage Example
+
+The example below demonstrates a custom trap that kills the ball with the `Lasered` cause when a laser sensor detects it, and a time-pressure trigger that calls `TimeOut` when a countdown block hits zero:
+
+```lua
+-- Custom laser trap: lose the level as if shot by a laser
+function onLaserHit()
+    Level.loseLevel(LostLevelCause.Lasered)
+end
+
+-- Custom countdown block: lose the level with a timeout cause
+function onCountdownExpired()
+    Level.loseLevel(LostLevelCause.TimeOut)
+end
+```
+
+You can also use `LostLevelCause` in a scripted hazard zone that burns the ball when it enters a fire region:
+
+```lua
+function onEnterFireZone(entity)
+    if entity:getType() == EntityType.Ball then
+        Level.loseLevel(LostLevelCause.Burned)
+    end
+end
+```

@@ -1,0 +1,197 @@
+---
+title: "Using the Built-In Script Editor"
+description: "Learn how to open the script editor, attach Lua scripts to level entities, import shared code, and use the Logger to debug your scripts."
+sidebarTitle: "Script Editor"
+---
+
+RollingQuest includes a script editor built directly into the level editor. You do not need any external tools — you open the editor, write your Lua code, attach the script to a game entity, and play your level to see the result. This page walks you through the complete workflow, from opening the editor to running your first script.
+
+## What the script editor is
+
+The script editor is a text editor embedded inside the RollingQuest level editor. It lets you write Lua scripts that hook into game events and control what happens at runtime. Each script you create is stored as a named file inside your level project and can be attached to one or more game entities.
+
+## The script-per-entity model
+
+Every game entity in RollingQuest can have its own script:
+
+- **Level** — runs for the whole level (start, update, win, lose)
+- **Blocks** — individual cube blocks in the world
+- **Sides** — the faces of a block that a ball can roll across
+- **Items** — collectible objects in the level
+- **Enemies** — enemy entities
+- **Balls** — the player-controlled ball(s)
+- **Decorations** — visual decoration objects
+
+Each entity's script is a separate file identified by name. Attaching the same script name to multiple entities makes them all share the same code, which is useful for standardized behavior (for example, every moving block in a section could share one "move-and-bounce" script).
+
+<Note>
+  Scripts are not executed directly. The game reads them and calls specific **hook functions** you define inside them when corresponding events occur. If a hook function is not defined in your script, the game simply skips that event for that entity.
+</Note>
+
+## Writing and attaching a script
+
+<Steps>
+  <Step title="Open the level editor">
+    Launch RollingQuest and open the level you want to work on in the level editor.
+  </Step>
+  <Step title="Open the script editor">
+    Find the **Script Editor** panel in the level editor interface. You can open it from the editor toolbar or the entity properties panel — the exact location depends on your editor layout, but it is typically accessible by selecting an entity and looking for the script section in its properties.
+  </Step>
+  <Step title="Create a new script">
+    In the script editor, create a new script file and give it a descriptive name such as `level_intro` or `moving_block`. The name identifies this script so you can attach it to entities and reference it with `import`, `include`, or `require`.
+  </Step>
+  <Step title="Write your hook functions">
+    Type your Lua code into the editor. Define the hook functions you need. The example below is a Level script that shows a message when the level starts:
+
+    ```lua
+    function OnStart(self)
+      Dialog.createTemporary("Level started! Good luck.", 3)
+    end
+    ```
+  </Step>
+  <Step title="Attach the script to an entity">
+    Select the entity you want the script to run on (for example, the level itself). In its properties panel, find the **Script** field and enter the name of the script file you just created. Save your changes.
+  </Step>
+  <Step title="Play the level to test">
+    Start the level in play mode. The game will call your hook functions automatically when their events occur. If something does not work as expected, use the Logger (see below) to print diagnostic information to the logs console.
+  </Step>
+</Steps>
+
+---
+
+## Loading other scripts: `import`, `include`, and `require`
+
+As your project grows, you will want to split shared code into separate script files and load them from other scripts. Three global functions handle this.
+
+### `include(scriptName)`
+
+`include` loads the contents of another script directly into the current script's environment, as if you had typed the code inline. Use it to bring in shared constants, utility functions, or helper tables.
+
+```lua
+-- loads everything defined in "utils" into this script
+include("utils")
+
+-- now any functions or variables defined in utils.lua are available here
+local result = myUtilFunction(42)
+```
+
+### `import(scriptName)`
+
+`import` loads a script and returns its contents as a table. This is useful when you want to access definitions from another script without polluting the current script's namespace.
+
+```lua
+local config = import("level_config")
+
+-- access values defined in the level_config script
+local maxTime = config.maxTime
+local title   = config.levelTitle
+```
+
+### `require(scriptName)`
+
+`require` loads a script as a module. If the script returns a value (using `return` at the top level), `require` gives you that return value. Unlike `include`, the same script is only loaded once per session — subsequent `require` calls return the cached result.
+
+```lua
+-- in "constants.lua":
+-- return { MAX_LIVES = 5, START_SCORE = 0 }
+
+local constants = require("constants")
+print(constants.MAX_LIVES)  -- 5
+```
+
+<CodeGroup>
+```lua include — merge into current script
+include("shared_helpers")
+
+-- shared_helpers functions are now available directly
+greetPlayer("Hero")
+```
+
+```lua import — load into a table
+local helpers = import("shared_helpers")
+
+helpers.greetPlayer("Hero")
+```
+
+```lua require — load as a module (cached)
+local M = require("my_module")
+
+M.doSomething()
+```
+</CodeGroup>
+
+---
+
+## Debugging with the Logger
+
+The `Logger` namespace lets you print messages to the in-game logs console while you are testing your level in the editor. Log messages do not appear during normal gameplay — `Logger.isEnabled` is `true` only in editor mode, so your logging calls are silently ignored in the final published level.
+
+### The four log levels
+
+| Function            | When to use                                         | Console style         |
+|---------------------|-----------------------------------------------------|-----------------------|
+| `Logger.log(msg)`   | General output; no special styling                  | Default               |
+| `Logger.info(msg)`  | Informational messages about normal program flow    | Styled as information |
+| `Logger.warning(msg)` | Something unexpected happened but execution continues | Yellow background  |
+| `Logger.error(msg)` | A serious problem that needs your attention         | Red background        |
+
+### Examples
+
+```lua
+function OnStart(self)
+  Logger.info("Level started. Current lives: " .. tostring(Level.currentLives))
+end
+
+function OnBallRoll(self, rollIn, side, ball)
+  if rollIn then
+    Logger.log("Ball rolled onto block: " .. tostring(self.name))
+  end
+end
+
+function OnDeath(self)
+  Logger.warning("Ball died! Remaining lives: " .. tostring(Level.currentLives))
+end
+```
+
+<Tip>
+  Wrap verbose logging in an `if Logger.isEnabled then` guard if you want to be explicit about it, though it is not strictly required since the Logger silently skips its work when disabled.
+</Tip>
+
+```lua
+function OnUpdate(self, deltaTime)
+  if Logger.isEnabled then
+    Logger.log("Frame time: " .. tostring(deltaTime))
+  end
+end
+```
+
+---
+
+## Your first complete level script
+
+Here is a finished example you can copy into a new script file and attach to your level entity. It prints a log message in the editor, shows a welcome dialog to the player, and logs another message when the level is won.
+
+```lua
+-- Script name: level_main
+-- Attach to: the Level entity
+
+function OnStart(self)
+  Logger.info("OnStart called — level is beginning.")
+
+  Dialog.createTemporary("Welcome! Collect all the keys to proceed.", 4)
+end
+
+function OnWon(self)
+  Logger.info("OnWon called — player completed the level.")
+end
+
+function OnLost(self)
+  Logger.warning("OnLost called — player failed the level.")
+end
+```
+
+Attach this script to your level, enter play mode, and you will see the welcome dialog immediately on start. Switch to the editor logs console to see the `Logger.info` messages as each hook fires.
+
+<Tip>
+  Ready to learn about hook functions in depth? Head to [Hooks](/concepts/hooks) to see every event available for each entity type.
+</Tip>

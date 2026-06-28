@@ -1,0 +1,498 @@
+---
+title: "Level Namespace — RollingQuest Lua Scripting API"
+description: "Complete reference for the Level namespace: read level state, control flow, manage time, score, lives, entities, effects, and projectiles in your scripts."
+sidebarTitle: "Level"
+---
+
+The `Level` namespace is your primary interface to everything happening inside a running level. Every variable and function documented here is accessed directly as a field on the global `Level` table — for example, `Level.keysCount` or `Level.completeLevel()`. All variables are read-only unless explicitly noted otherwise.
+
+---
+
+## Campaign Info
+
+These variables describe which campaign, episode, and level is currently running. They are useful for conditional logic that should behave differently depending on where in the campaign the player is.
+
+| Variable | Type | Description |
+|---|---|---|
+| `Level.campaign` | `string` | Name of the campaign the level belongs to. |
+| `Level.campaignEpisode` | `string` | Name of the current episode in the campaign. |
+| `Level.campaignEpisodeIndex` | `integer` | Zero-based index of the current episode. |
+| `Level.campaignLevelName` | `string` | Name of the current level in the campaign. |
+| `Level.campaignLevelIndex` | `integer` | Index of the current level in the campaign. |
+| `Level.isCampaignNormalLevel` | `boolean` | `true` if this is a normal (story) level. |
+| `Level.isCampaignBonusLevel` | `boolean` | `true` if this is a bonus level. |
+| `Level.isCampaignSecretLevel` | `boolean` | `true` if this is a secret level. |
+| `Level.campaignNormalLevelNumber` | `integer` | Sequential number of this normal level in the campaign. |
+| `Level.campaignGlobalData` | `LocalData` | Global data storage shared across the entire campaign. |
+| `Level.tag` | `string` | The tag assigned to this level entity. |
+| `Level.localData` | `RawLocalData` | Per-level local data storage. |
+| `Level.type` | `EntityType` | Entity type of the level (`EntityType.Level`). |
+| `Level.mainSection` | `LevelSection` | The primary section of the level. |
+
+---
+
+## Level State
+
+These variables expose the current structural state of the level — how many keys and treasures exist, what blocks are visitable, and whether all objectives are met.
+
+| Variable | Type | Description |
+|---|---|---|
+| `Level.keysCount` | `integer` | Total number of keys placed in the level. |
+| `Level.remainingKeys` | `integer` | Number of keys not yet collected. |
+| `Level.collectedKeys` | `integer` | Number of keys already collected. |
+| `Level.areAllKeysCollected` | `boolean` | `true` when every key has been collected. |
+| `Level.treasureCount` | `integer` | Total number of treasures in the level. |
+| `Level.treasureScoreCount` | `integer` | Number of treasures that contribute to score. |
+| `Level.treasureTotalScore` | `integer` | Combined score value of all treasures. |
+| `Level.visitableBlocksCount` | `integer` | Number of blocks the ball can visit. |
+| `Level.hasFruit` | `boolean` | `true` if at least one fruit is present. |
+| `Level.areFruitsEnabled` | `boolean` | `true` if the fruit system is active. |
+| `Level.currentFruitIndex` | `integer` | Index of the current active fruit. |
+| `Level.areAllFruitsCollected` | `boolean` | `true` when every fruit has been collected. |
+| `Level.areAllRequiredFruitsToBonusCollected` | `boolean` | `true` when enough fruits to unlock the bonus have been collected. |
+
+---
+
+## Time & Timer
+
+These variables let you read and react to the level's time configuration, including hourglass state.
+
+| Variable | Type | Writable | Description |
+|---|---|---|---|
+| `Level.maxTime` | `number` | No | Maximum allowed time configured for the level. |
+| `Level.initialTime` | `number` | No | Time value the level started with. |
+| `Level.remainingTime` | `number` | No | Current hourglass time remaining. |
+| `Level.isHourglassEnabled` | `boolean` | **Yes** | Enable or disable the hourglass countdown. |
+| `Level.isHourglassBlocked` | `boolean` | No | `true` when the hourglass is paused/blocked. |
+| `Level.hourglassEndsCausesLoseLevel` | `boolean` | No | `true` if running out of hourglass time ends the level. |
+| `Level.timer` | `Timer` | No | The level's `Timer` object for precise time operations. |
+| `Level.isElapsedTimeEnabled` | `boolean` | No | `true` if elapsed-time tracking is active. |
+| `Level.elapsedTime` | `number` | No | Total seconds elapsed since level start. |
+| `Level.glassesTime` | `number` | **Yes** | Duration of the glasses (lighting) effect. |
+
+---
+
+## Scoring
+
+Use these variables to read and react to the player's current score and how much treasure they have collected.
+
+| Variable | Type | Description |
+|---|---|---|
+| `Level.isPlayerScoreEnabled` | `boolean` | `true` if the global player score system is active. |
+| `Level.isLevelScoreEnabled` | `boolean` | `true` if per-level scoring is active. |
+| `Level.playerScore` | `integer` | The player's cumulative score across the run. |
+| `Level.levelScore` | `integer` | Score accumulated specifically within this level. |
+| `Level.levelLosePenalty` | `integer` | Points deducted when the player loses the level. |
+| `Level.levelRestartPenalty` | `integer` | Points deducted when the player restarts the level. |
+| `Level.treasureCollected` | `integer` | Number of treasure items the player has collected. |
+| `Level.treasureScoreCollected` | `integer` | Score earned from collected treasure items. |
+| `Level.treasureCollectedPercentage` | `number` | Percentage of total treasures collected (`0.0`–`1.0`). |
+
+---
+
+## Lives
+
+| Variable | Type | Writable | Description |
+|---|---|---|---|
+| `Level.currentLives` | `integer` | No | The player's current life count. |
+| `Level.hasInfiniteLives` | `boolean` | **Yes** | Set to `true` to grant the player unlimited lives. |
+
+---
+
+## Special States
+
+| Variable | Type | Description |
+|---|---|---|
+| `Level.isDarkModeEnabled` | `boolean` | `true` when dark mode (reduced visibility) is active. |
+| `Level.isSleepingPillEffectActive` | `boolean` | `true` while the sleeping-pill slow-motion effect is running. |
+| `Level.lavaPool` | `LavaPool` | Reference to the level's lava pool environment object. |
+| `Level.currentBall` | `Ball` | The ball currently under player control. |
+
+---
+
+## Entity Accessors
+
+These functions return entities from within the level. Functions whose names end with `Iterator` return a lazy iterator you use in a `for` loop; their counterparts without that suffix return a plain Lua table.
+
+### Main section — iterators
+
+```lua
+--- @return Block[]
+function Level.getAllBlocksIterator()
+
+--- @return Enemy[]
+function Level.getAllEnemiesIterator()
+
+--- @return Ball[]
+function Level.getAllBallsIterator()
+
+--- @return Item[]
+function Level.getAllItemsIterator()
+
+--- @return Decoration[]
+function Level.getAllDecorationsIterator()
+```
+
+### Main section — tables
+
+```lua
+--- @return Block[]
+function Level.getBlocks()
+
+--- @return Enemy[]
+function Level.getEnemies()
+
+--- @return Ball[]
+function Level.getBalls()
+
+--- @return Item[]
+function Level.getItems()
+
+--- @return Decoration[]
+function Level.getDecorations()
+```
+
+### All sections — iterators
+
+```lua
+--- @return LevelSection[]
+function Level.getSectionsIterator()
+
+--- @return Block[]
+function Level.getAllSectionsBlocksIterator()
+
+--- @return Enemy[]
+function Level.getAllSectionsEnemiesIterator()
+
+--- @return Ball[]
+function Level.getAllSectionsBallsIterator()
+
+--- @return Item[]
+function Level.getAllSectionsItemsIterator()
+
+--- @return Decoration[]
+function Level.getAllSectionsDecorationsIterator()
+```
+
+### All sections — tables
+
+```lua
+--- @return table
+function Level.getSections()
+
+--- @return table
+function Level.getAllSectionsBlocks()
+
+--- @return table
+function Level.getAllSectionsEnemies()
+
+--- @return table
+function Level.getAllSectionsBalls()
+
+--- @return table
+function Level.getAllSectionsItems()
+
+--- @return table
+function Level.getAllSectionsDecorations()
+```
+
+### Single entity lookups
+
+```lua
+--- @param index integer
+--- @return Ball
+function Level.getBall(index)
+```
+
+```lua
+--- @param sectionId string
+--- @return LevelSection
+function Level.getSection(sectionId)
+
+--- @param sectionId string
+--- @return boolean
+function Level.hasSection(sectionId)
+```
+
+```lua
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @return Block
+function Level.getBlock(x, y, z)
+
+--- @param slot BlockSlot
+--- @return Block
+function Level.getBlock(slot)
+
+--- @param sectionId string
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @return Block
+function Level.getBlock(sectionId, x, y, z)
+
+--- @param sectionId string
+--- @param slot BlockSlot
+--- @return Block
+function Level.getBlock(sectionId, slot)
+```
+
+```lua
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @return boolean
+function Level.hasBlock(x, y, z)
+
+--- @param slot BlockSlot
+--- @return boolean
+function Level.hasBlock(slot)
+
+--- @param sectionId string
+--- @param x integer
+--- @param y integer
+--- @param z integer
+--- @return boolean
+function Level.hasBlock(sectionId, x, y, z)
+
+--- @param sectionId string
+--- @param slot BlockSlot
+--- @return boolean
+function Level.hasBlock(sectionId, slot)
+```
+
+```lua
+--- @param color LevelColor
+--- @return Side
+function Level.getPortalSide(color)
+
+--- @param sectionId string
+--- @param color LevelColor
+--- @return Side
+function Level.getPortalSide(sectionId, color)
+
+--- @param origin Side
+--- @return Side
+function Level.getNextTeleportTarget(origin)
+```
+
+---
+
+## Level Control Functions
+
+These functions change the progression state of the level.
+
+### `completeLevel`
+
+Marks the level as successfully completed and advances to the next level.
+
+```lua
+--- @return any
+function Level.completeLevel()
+
+--- @param nextLevel string
+--- @return any
+function Level.completeLevel(nextLevel)
+```
+
+Pass `nextLevel` as the name of a specific campaign level to override the default progression.
+
+### `loseLevel`
+
+Triggers the lose-level state with a specified cause.
+
+```lua
+--- @param cause LostLevelCause
+--- @return any
+function Level.loseLevel(cause)
+
+--- @param cause string
+--- @return any
+function Level.loseLevel(cause)
+
+--- @param cause string
+--- @param causeIcon LostLevelCause
+--- @return any
+function Level.loseLevel(cause, causeIcon)
+```
+
+Pass a `LostLevelCause` enum value for built-in cause icons, or pass a plain `string` for a custom cause message. Use the two-argument form to pair a custom text message with an icon.
+
+### `restartLevel`
+
+Restarts the current level from the beginning.
+
+```lua
+--- @return any
+function Level.restartLevel()
+```
+
+---
+
+## Time Functions
+
+These functions modify the hourglass countdown at runtime.
+
+```lua
+--- @param amount number
+--- @return any
+function Level.increaseHourglassTime(amount)
+
+--- @param amount number
+--- @return any
+function Level.decreaseHourglassTime(amount)
+
+--- @return any
+function Level.invertHourglass()
+```
+
+`invertHourglass()` flips the hourglass direction — a countdown becomes a count-up and vice versa.
+
+---
+
+## Scoring & Lives Functions
+
+```lua
+--- @param score integer
+--- @return any
+function Level.giveScore(score)
+
+--- @param amount integer
+--- @return any
+function Level.giveLives(amount)
+
+--- @param amount integer
+--- @return any
+function Level.loseLives(amount)
+```
+
+---
+
+## Effect Functions
+
+### Dark mode
+
+```lua
+--- @return any
+function Level.activateDarkMode()
+
+--- @return any
+function Level.deactivateDarkMode()
+```
+
+### Sleeping pill
+
+```lua
+--- @param seconds number
+--- @return any
+function Level.activateSleepingPillEffect(seconds)
+
+--- @return any
+function Level.deactivateSleepingPillEffect()
+```
+
+### Checkpoints
+
+```lua
+--- @return any
+function Level.saveCheckpoint()
+
+--- @param side Side
+--- @return any
+function Level.saveCheckpoint(side)
+```
+
+Passing a `Side` saves the checkpoint relative to a specific block face rather than the ball's current position.
+
+---
+
+## Fruit Helpers
+
+```lua
+--- @param fruitIndex integer
+--- @return boolean
+function Level.isFruitEnabled(fruitIndex)
+
+--- @param fruitIndex integer
+--- @return boolean
+function Level.isFruitCollected(fruitIndex)
+```
+
+---
+
+## Utility
+
+### `delayAction`
+
+Schedules a Lua function to run after `delayTime` seconds.
+
+```lua
+--- @param delayTime number
+--- @param action fun(): void
+--- @return any
+function Level.delayAction(delayTime, action)
+```
+
+### `createProjectile`
+
+Spawns a projectile in the level. You can target a specific section or default to the main section, and supply either a `ProjectileRequest` object or a raw property table.
+
+```lua
+--- @param sectionId string
+--- @param request ProjectileRequest
+--- @return Projectile
+function Level.createProjectile(sectionId, request)
+
+--- @param request ProjectileRequest
+--- @return Projectile
+function Level.createProjectile(request)
+
+--- @param sectionId string
+--- @param projectileProperties { skin: string, origin: Vector3, rotation: Quaternion, ... }
+--- @return Projectile
+function Level.createProjectile(sectionId, projectileProperties)
+
+--- @param projectileProperties { skin: string, origin: Vector3, rotation: Quaternion, ... }
+--- @return Projectile
+function Level.createProjectile(projectileProperties)
+```
+
+### `getAvailableProjectileSkins`
+
+Returns a table of skin name strings available in the given section (or the main section when called with no arguments).
+
+```lua
+--- @param sectionId string
+--- @return table
+function Level.getAvailableProjectileSkins(sectionId)
+
+--- @return table
+function Level.getAvailableProjectileSkins()
+```
+
+---
+
+## Usage Example
+
+```lua
+function OnStart()
+    -- Show a welcome dialog then activate dark mode after 3 seconds
+    Dialog.createTemporary("Find all the keys!", 4.0)
+
+    Level.delayAction(3.0, function()
+        Level.activateDarkMode()
+    end)
+end
+
+function OnKeyCollected()
+    if Level.areAllKeysCollected then
+        Level.giveScore(500)
+        Dialog.createTemporary("All keys found! Head to the exit.", 3.0)
+    end
+end
+
+function OnHourglassEnd()
+    Level.loseLevel("Time ran out!", LostLevelCause.Hourglass)
+end
+```
