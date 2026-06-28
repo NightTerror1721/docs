@@ -26,7 +26,7 @@ ___
 function Signals.emit(signalProperties)
 ```
 
-Emits a signal to be handled by entities in the level. Example: Signals.Emit{ id \= 'MySignal', data \= { damage \= 1 } }
+Emits a signal to be handled by entities in the level. Example: `Signals.Emit{ id \= 'MySignal', data \= { damage \= 1 } }`
 
 - **Static:** No
 - #### Parameters:
